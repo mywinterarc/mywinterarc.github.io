@@ -853,6 +853,50 @@ html[data-accent] nav.tabs button{--tc:var(--acc)}
 .swatches button{width:40px;height:40px;border-radius:50%;border:0;padding:0;position:relative;box-shadow:0 2px 6px rgba(0,0,0,.15)}
 .swatches button[aria-pressed="true"]::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px}
 .swatches button[aria-pressed="true"]{box-shadow:0 0 0 3px var(--panel),0 0 0 5px var(--ink)}
+/* ===== v2.0.71: hochwertigere Bewegungen */
+:root{--spring:cubic-bezier(.34,1.56,.64,1);--swift:cubic-bezier(.22,1,.36,1)}
+/* Navigation: Leuchtpunkt gleitet zwischen den Tabs */
+nav.tabs{isolation:isolate}
+nav.tabs .navPill{position:absolute;z-index:-1;top:0;left:0;height:28px;width:46px;border-radius:999px;pointer-events:none;
+  background:color-mix(in srgb,var(--pc,var(--accent)) 20%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--pc,var(--accent)) 25%,transparent);
+  transition:transform .55s var(--spring),background .4s ease,box-shadow .4s ease;will-change:transform}
+nav.tabs.hasPill button[aria-selected="true"] svg{background:transparent!important;animation:none}
+nav.tabs.hasPill button svg{transition:transform .35s var(--spring)}
+nav.tabs.hasPill button[aria-selected="true"] svg{transform:translateY(-1px) scale(1.06)}
+nav.tabs button{transition:color .3s ease}
+/* Tabwechsel mit Richtung */
+.enter > *{animation-name:riseX;animation-duration:.55s;animation-timing-function:var(--swift)}
+@keyframes riseX{from{opacity:0;transform:translate(var(--dx,0px),14px) scale(.985)}to{opacity:1;transform:none}}
+/* Karten blenden beim Scrollen weich ein */
+.rv{opacity:0;transform:translateY(22px) scale(.985)}
+.rvIn{animation:rvIn .6s var(--swift) both}
+@keyframes rvIn{from{opacity:0;transform:translateY(22px) scale(.985)}to{opacity:1;transform:none}}
+/* Drücken fühlt sich an */
+button,.ringTile,.qtile,.recrow,.wrow{-webkit-tap-highlight-color:transparent}
+.btn,.ringTile,.qtile,.chips button,.seg button,.tick,.spb,.kcalBig,.wrow,.todayCard button,.link{transition:transform .18s var(--swift),background-color .25s ease,box-shadow .25s ease,color .2s ease,opacity .2s ease}
+.btn:active:not(:disabled),.ringTile:active,.qtile:active,.chips button:active,.kcalBig:active,.wrow:active{transform:scale(.965)}
+.seg button:active,.spb:active,.link:active{transform:scale(.93)}
+.tick:active{transform:scale(.86)}
+.card{transition:box-shadow .3s ease,transform .3s var(--swift)}
+/* Haken: Ring breitet sich aus */
+.tapRing{position:fixed;z-index:200;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;pointer-events:none;border:2px solid var(--done);animation:tapRing .55s var(--swift) forwards}
+@keyframes tapRing{to{transform:scale(5);opacity:0;border-width:1px}}
+.tapDot{position:fixed;z-index:200;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;pointer-events:none;background:var(--done);animation:tapDot .6s var(--swift) forwards}
+@keyframes tapDot{to{transform:translate(var(--x),var(--y)) scale(.3);opacity:0}}
+.tick[aria-pressed="true"]{animation:tickPop .4s var(--spring)}
+@keyframes tickPop{0%{transform:scale(.7)}100%{transform:scale(1)}}
+/* Fenster federn rein, Hintergrund wird weich */
+.sheet{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.sheet .pane{animation:sheetUp .5s var(--swift) both}
+.sheet .pane > *{animation:rise .45s var(--swift) both}
+.sheet .pane > *:nth-child(2){animation-delay:.03s}.sheet .pane > *:nth-child(3){animation-delay:.06s}.sheet .pane > *:nth-child(4){animation-delay:.09s}.sheet .pane > *:nth-child(n+5){animation-delay:.12s}
+.toast.pop{animation:toastIn .5s var(--spring) both}
+/* Balken wachsen weich */
+.bar i,.bar > span,.prog > i{transition:width .9s var(--swift)}
+/* Zahlen wechseln sanft */
+.countUp{display:inline-block;animation:numIn .45s var(--swift)}
+@keyframes numIn{from{opacity:.3;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.rv{opacity:1;transform:none}.navPill{transition:none}}
 </style>
 </head>
 <body>
@@ -5154,7 +5198,7 @@ function renderNutriRings(k){
   const big=el("button","kcalBig"), left=Math.round(G.kcal-T.kcal), over=left<0;
   const tx=el("div"); tx.append(el("b",null,kcalShowLeft ? de(Math.abs(left)) : de(T.kcal)+" / "+de(G.kcal)), el("span","label",kcalShowLeft ? (over?"kcal drüber":"kcal übrig") : "kcal gegessen"));
   const rg=el("div","kcalRing"); rg.innerHTML=ringSVG(T.kcal/G.kcal, over?"#F0566A":"var(--accent)", '<text x="32" y="30" text-anchor="middle" font-size="11" font-weight="800" fill="var(--ink)">'+Math.round(T.kcal/G.kcal*100)+' %</text><text x="32" y="42" text-anchor="middle" font-size="7" font-weight="700" fill="var(--muted)">vom Ziel</text>');
-  big.append(tx, rg); big.addEventListener("click",()=>{ kcalShowLeft=!kcalShowLeft; renderNutriRings(k); }); box.append(big);
+  big.append(tx, rg); try{ countUp(tx.querySelector("b"),"kcal"+(kcalShowLeft?"L":"E")); }catch(e){} big.addEventListener("click",()=>{ kcalShowLeft=!kcalShowLeft; renderNutriRings(k); }); box.append(big);
   const fibG=Math.round(Math.max(25,G.kcal/1000*14)), sugG=Math.round(G.kcal*0.1/4), wl=((state.water||{})[k]||0)/1000, wg=waterGoal();
   const tiles=[["🍗","Eiweiß",T.p,G.p,"g","#FF5E7E"],["🍚","Kohlenhydrate",T.c,G.c,"g","#FFB547"],["🥑","Fett",T.f,G.f,"g","#5B8CFF"],["🥦","Ballaststoffe",T.fib,fibG,"g","#36D1A0",!T.fibN],["🍬","Zucker",T.sug,sugG,"g","#E06BD0",!T.fibN,true],["💧","Wasser",wl,wg,"l","#43C6F0"]];
   const gr=el("div","ringGrid");
@@ -5616,6 +5660,48 @@ async function alarmCheck(quiet){
 }
 function alarmReminders(now){ const out=[]; Object.keys(state.alarms||{}).forEach((d,i)=>{ const a=state.alarms[d]; if(a.set) return; const wm=toMin(a.w), goal=(P().sleepGoal||8)*60; const at=new Date(atTime(d,a.w).getTime()-(goal+75)*60000); if(at>now) out.push({id:70+i%9, title:"⏰ Wecker für morgen "+a.w+" stellen", body:"Antippen, die App stellt ihn automatisch in deiner Uhr App.", at}); }); return out; }
 
+
+// v2.0.71: Bewegungen (Navigation, Einblenden, Haken, Zahlen, kurze Vibration)
+const RM = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+function buzz(ms){ try{ if(P().haptic!==false && navigator.vibrate) navigator.vibrate(ms||8); }catch(e){} }
+function navPillMove(instant){
+  const nav=document.querySelector("nav.tabs"); if(!nav) return; let pill=nav.querySelector(".navPill");
+  if(!pill){ pill=el("span","navPill"); nav.prepend(pill); nav.classList.add("hasPill"); }
+  const b=nav.querySelector('button[aria-selected="true"]'); if(!b) return; const sv=b.querySelector("svg"); if(!sv) return;
+  const nr=nav.getBoundingClientRect(), r=sv.getBoundingClientRect();
+  if(instant){ pill.style.transition="none"; }
+  pill.style.width=r.width+"px"; pill.style.height=r.height+"px"; pill.style.transform="translate("+(r.left-nr.left)+"px,"+(r.top-nr.top-1)+"px)";
+  pill.style.setProperty("--pc", getComputedStyle(b).getPropertyValue("--tc").trim() || "var(--accent)");
+  if(instant){ void pill.offsetWidth; pill.style.transition=""; }
+}
+const TAB_ORDER=["heute","woche","training","essen","koerper"]; let lastTabI=0;
+function revealCards(sec){
+  if(RM || !sec || !("IntersectionObserver" in window)) return;
+  const io = revealCards.io || (revealCards.io = new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ const t=e.target; io.unobserve(t); t.classList.remove("rv"); t.classList.add("rvIn"); setTimeout(()=>t.classList.remove("rvIn"),700); } }), {rootMargin:"0px 0px -6% 0px", threshold:0.04}));
+  const H=window.innerHeight;
+  sec.querySelectorAll(":scope > .card, :scope > div > .card").forEach(c=>{ if(c.hidden || c.dataset.rvDone) return; const r=c.getBoundingClientRect(); c.dataset.rvDone="1"; if(r.top > H*0.92){ c.classList.add("rv"); io.observe(c); } });
+}
+// Zahlen hochzählen (kcal groß)
+const cuLast={};
+function countUp(node, key){
+  if(!node || RM) return; const txt=node.textContent, m=txt.match(/^([\d.]+)/); if(!m) return; const to=parseInt(m[1].replace(/\./g,""),10), rest=txt.slice(m[0].length);
+  const from=cuLast[key]; cuLast[key]=to; if(from==null || from===to || !isFinite(to)) return;
+  const t0=performance.now(), D=650; const step=t=>{ const p=Math.min(1,(t-t0)/D), e=1-Math.pow(1-p,3); node.textContent=de(Math.round(from+(to-from)*e))+rest; if(p<1) requestAnimationFrame(step); }; requestAnimationFrame(step);
+}
+function motionInit(){
+  navPillMove(true); window.addEventListener("resize",()=>navPillMove(true));
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{
+    const i=TAB_ORDER.indexOf(b.dataset.tab), sec=$("p-"+b.dataset.tab); if(sec) sec.style.setProperty("--dx", (i>lastTabI?18:i<lastTabI?-18:0)+"px"); lastTabI=i;
+    navPillMove(); buzz(6); setTimeout(()=>revealCards(sec),60);
+  }));
+  // Haken: Ring und Funken an der Stelle, kurze Vibration
+  document.addEventListener("click",e=>{ const t=e.target.closest && e.target.closest(".tick"); if(!t || RM) return; const was=t.getAttribute("aria-pressed")==="true"; if(was) return;
+    const r=t.getBoundingClientRect(), x=r.left+r.width/2, y=r.top+r.height/2; const ring=el("span","tapRing"); ring.style.left=x+"px"; ring.style.top=y+"px"; document.body.append(ring); setTimeout(()=>ring.remove(),600);
+    for(let k=0;k<7;k++){ const d=el("span","tapDot"), a=k/7*Math.PI*2+Math.random()*.5, R=18+Math.random()*10; d.style.left=x+"px"; d.style.top=y+"px"; d.style.setProperty("--x",Math.cos(a)*R+"px"); d.style.setProperty("--y",Math.sin(a)*R+"px"); document.body.append(d); setTimeout(()=>d.remove(),650); }
+    buzz(12); }, true);
+  setTimeout(()=>revealCards($("p-"+tab)),400);
+}
+
 // ---------- Start
 (async function(){
   try{ const m=location.hash.match(/^#umzug=([A-Za-z0-9_-]+)/); if(m){ history.replaceState(null,"",location.pathname+location.search);
@@ -5634,7 +5720,7 @@ function alarmReminders(now){ const out=[]; Object.keys(state.alarms||{}).forEac
     await refreshPerm();
     if(notifPerm==="prompt" || notifPerm==="prompt-with-rationale"){ try{ await LN.requestPermissions(); }catch(e){} await refreshPerm(); }
   }
-  render(); animIn($("p-"+tab)); if(liveRun()) openLive(); else if(state.train.act) openActView(); scheduleAll();
+  render(); animIn($("p-"+tab)); try{ motionInit(); }catch(e){ console.error(e); } if(liveRun()) openLive(); else if(state.train.act) openActView(); scheduleAll();
   initCloud();
   let crashed=null; try{ crashed=localStorage.getItem("wp_hcSyncing"); localStorage.removeItem("wp_hcSyncing"); }catch(e){}
   await hcCheck(); await hcPerms(); render();
