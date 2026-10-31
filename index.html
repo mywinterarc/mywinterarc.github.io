@@ -897,6 +897,13 @@ button,.ringTile,.qtile,.recrow,.wrow{-webkit-tap-highlight-color:transparent}
 .countUp{display:inline-block;animation:numIn .45s var(--swift)}
 @keyframes numIn{from{opacity:.3;transform:translateY(4px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){.rv{opacity:1;transform:none}.navPill{transition:none}}
+/* ===== v2.0.73: flüssigeres Scrollen in Fenstern (Einstellungen usw.) */
+.sheet{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(6,10,14,.55)}
+.sheet .pane{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;transform:translateZ(0);contain:layout paint;will-change:scroll-position}
+body::before{will-change:transform}
+html.sheetOpen body{overflow:hidden}
+html.sheetOpen nav.tabs{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--panel)}
+html.sheetOpen body::before,html.sheetOpen .mascot svg,html.sheetOpen .mascot .blink,html.sheetOpen .streakChip .fl,html.sheetOpen .todayCard .shine,html.sheetOpen .seq span.cur,html.sheetOpen .exhero img,html.sheetOpen .actEmo{animation-play-state:paused!important}
 </style>
 </head>
 <body>
@@ -1873,7 +1880,7 @@ function shiftPicker(k, small){
   });
   return wrap;
 }
-function openSheet(build, kind){ clearTimeout(sheetT); $("sheet").classList.remove("closing"); const p=$("pane"); p.innerHTML=""; p.dataset.kind=kind||""; build(p); $("sheet").hidden=false; p.scrollTop=0; }
+function openSheet(build, kind){ document.documentElement.classList.add("sheetOpen"); clearTimeout(sheetT); $("sheet").classList.remove("closing"); const p=$("pane"); p.innerHTML=""; p.dataset.kind=kind||""; build(p); $("sheet").hidden=false; p.scrollTop=0; }
 let sheetT=null;
 function closeSheet(){ const sh=$("sheet"); if(sh.hidden) return; clearTimeout(sheetT); sh.classList.add("closing"); sheetT=setTimeout(()=>{ sh.hidden=true; sh.classList.remove("closing"); $("pane").innerHTML=""; },200); }
 let sheetDown=null; $("sheet").addEventListener("pointerdown", e=>{ sheetDown=e.target.id==="sheet" ? Date.now() : null; });
@@ -5702,6 +5709,8 @@ function motionInit(){
   setTimeout(()=>revealCards($("p-"+tab)),400);
 }
 
+// v2.0.73: Klasse sheetOpen immer passend zum Fenster
+try{ const shx=document.getElementById("sheet"); new MutationObserver(()=>{ document.documentElement.classList.toggle("sheetOpen", !shx.hidden && !shx.classList.contains("closing")); }).observe(shx,{attributes:true,attributeFilter:["hidden","class"]}); }catch(e){}
 // ---------- Start
 (async function(){
   try{ const m=location.hash.match(/^#umzug=([A-Za-z0-9_-]+)/); if(m){ history.replaceState(null,"",location.pathname+location.search);
