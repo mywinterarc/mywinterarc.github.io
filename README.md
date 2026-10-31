@@ -1,3 +1,3 @@
-# Winterplan Web
+# Winterarc Web
 
-Browser Version vom Winterplan. Öffnen unter https://marioweineck-cbr.github.io/winterplan-web/ und mit dem Winterplan Konto anmelden.
+Browser Version von Winterarc. Öffnen unter https://mywinterarc.github.io und mit dem Winterarc Konto anmelden.
