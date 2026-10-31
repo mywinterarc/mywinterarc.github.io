@@ -5618,10 +5618,14 @@ function alarmReminders(now){ const out=[]; Object.keys(state.alarms||{}).forEac
 
 // ---------- Start
 (async function(){
+  try{ const m=location.hash.match(/^#umzug=([A-Za-z0-9_-]+)/); if(m){ history.replaceState(null,"",location.pathname+location.search);
+      if(!localStorage.getItem("winterplan") && window.DecompressionStream){ const b=atob(m[1].replace(/-/g,"+").replace(/_/g,"/")); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i);
+        const txt=await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"))).text(); const o=JSON.parse(txt); Object.keys(o).forEach(k=>{ if(/^(winterplan|wa_[a-z]+)$/.test(k)) localStorage.setItem(k,o[k]); }); window.__moved=true; } } }catch(e){ console.error(e); }
   try{ layoutV63(); }catch(e){ console.error(e); }
   await load();
   try{ fixMyRecipes(); }catch(e){}
   setTimeout(()=>alarmCheck(),2500);
+  if(window.__moved) setTimeout(()=>toast("Umzug geschafft, deine Daten sind mitgekommen. Falls du ein Konto hast, einmal neu anmelden."),1200);
   render();
   if(!P().setup) openOnboarding();
   if(LN){
