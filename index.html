@@ -1565,7 +1565,7 @@ const parseKey = k => { const [y,m,d]=k.split("-").map(Number); return new Date(
 const addDays = (k,n) => { const d=parseKey(k); d.setDate(d.getDate()+n); return keyOf(d); };
 const fmtDate = k => { const d=parseKey(k); return pad(d.getDate())+"."+pad(d.getMonth()+1)+"."; };
 const hm = d => pad(d.getHours())+":"+pad(d.getMinutes());
-const kg = v => v.toFixed(2).replace(".",",");
+const kg = v => (Math.round(v*10)/10).toFixed(1).replace(".",",").replace(/^-(0,0)$/,"$1");
 const de = v => Math.round(v).toLocaleString("de-DE");
 const fmtAmt = v => (Math.round(v*10)/10).toLocaleString("de-DE");
 const num = v => parseFloat(String(v).replace(",","."));
@@ -3679,7 +3679,7 @@ function openBcCal(){
 }
 function scaleUI(){
   const r=scaleRun; if(!r || !r.box) return;
-  r.num.textContent = r.w ? fmtAmt2(r.w) : "--,--"; r.num.classList.toggle("stable", !!r.done); if(r.done && !r._snd){ r._snd=true; sfx("scale"); }
+  r.num.textContent = r.w ? kg(r.w) : "--,-"; r.num.classList.toggle("stable", !!r.done); if(r.done && !r._snd){ r._snd=true; sfx("scale"); }
   r.msg.textContent = r.msgText || "";
 }
 const fmtAmt2 = v => v.toFixed(2).replace(".",",");
@@ -5415,7 +5415,7 @@ function drawChart(entries){
 }
 function wStatsFill(st, pts, lbl){
   if(pts.length<2){ st.hidden=true; return; } st.hidden=false;
-  const vs=pts.map(e=>e[1]), f=x=>String(Math.round(x*10)/10).replace(".",",");
+  const vs=pts.map(e=>e[1]), f=x=>kg(x);
   const head=pts.slice(0,Math.min(3,Math.ceil(pts.length/3))), tail=pts.slice(-Math.min(3,Math.ceil(pts.length/3)));
   const avg=a=>a.reduce((s,x)=>s+x[1],0)/a.length, ch=Math.round((avg(tail)-avg(head))*10)/10, goal=gKind();
   const good = goal==="cut" ? ch<0 : goal==="bulk" ? ch>0 : Math.abs(ch)<0.5;
