@@ -806,6 +806,11 @@ body[data-tab="training"]::before{filter:hue-rotate(140deg)}body[data-tab="essen
 .suppRows.sp2 .spst{justify-self:end}
 .suppRows.sp2 .spd{grid-area:ds}
 .suppRows.sp2 .sr:not(:has(.spd)){grid-template-areas:"tk nm st"}
+.shiftPlan .spl{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.shiftPlan .spStep{font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.shiftPlan .spStep.big{background:color-mix(in srgb,#F0566A 16%,transparent);color:#F0566A}
+.shiftPlan .spAl{font-size:11px;font-weight:700;color:var(--muted)}
+.shiftPlan .spAl.on{color:var(--done)}
 
 :root{--mzb:color-mix(in srgb,var(--ink) 9%,var(--panel));--mz0:color-mix(in srgb,var(--ink) 20%,var(--panel))}
 .sheet{z-index:96}.toast{z-index:160}
@@ -2060,6 +2065,7 @@ function renderSleepCalc(){
     out.append(el("div","note","Wecker in Schlafzyklen von 90 Minuten, dann wachst du leichter auf: "+[6,7.5,9].map(h=>minTxt(bed+15+h*60)+" Uhr ("+String(h).replace(".",",")+" Std.)").join(", "))); }
   else { out.append(el("div","alert ok","Ins Bett um "+minTxt(bed)+" Uhr (inklusive 15 Minuten zum Einschlafen)."));
     out.append(el("div","note","In Schlafzyklen von 90 Minuten: "+[7.5,6].map(h=>minTxt(w-h*60-15)+" Uhr ("+String(h).replace(".",",")+" Std.)").join(" oder "))); }
+  if(ALARM){ const ab=el("button","btn small ghost","⏰ Wecker auf "+minTxt(w)+" stellen"); ab.style.alignSelf="flex-start"; ab.addEventListener("click",async()=>{ const m0=((w%1440)+1440)%1440; try{ await ALARM.set({hour:Math.floor(m0/60),minute:m0%60,label:"Winterarc",skipUi:false}); }catch(e){ toast("Keine Uhr App gefunden"); } }); out.append(ab); }
   const mkT=rows=>{ const t0=el("table"), tb=el("tbody"); rows.forEach(([n,m])=>{ const tr=el("tr"); tr.append(el("td",null,n), el("td","r num",minTxt(m))); tb.append(tr); }); t0.append(tb); return t0; };
   out.append(el("div","cat","Vor dem Schlafen"), mkT([["Letzter Kaffee oder Monster",bed-8*60],["Letztes großes Essen",bed-150],["Licht dimmen, Handy weg",bed-60],["Supplements vor dem Schlafen",bed-45]]),
              el("div","cat","Essenszeiten danach"), mkT([["Frühstück",w+30],["Mittag",w+300],["Snack",w+450],["Abendessen",w+630]]));
@@ -5348,8 +5354,10 @@ function planNights(D, base, c, needFree){
   // Schon nach der eigentlichen Bettzeit und noch wach? Dann heute Nacht ca. 7 Std. schlafen, Rest gleichmäßig verteilen
   const nowM=Math.floor((now-atTime(D,"00:00"))/60000); let start=null;
   if(days.length && days[0].free && sg>0){ const plan0=base-Math.ceil(diff/(nFree+1)/15)*15; if(plan0-goal-15<nowM){ start=Math.ceil((nowM+15+7*60)/15)*15; if(start>base+60) start=base+60; } }
-  const wakes=[]; let cur=base, left=nFree+1;
-  days.forEach((x,i)=>{ if(x.free){ if(i===0 && start!=null){ cur=start; wakes.push({d:x.d,w:cur,set:true,late:true}); left--; return; } const st=Math.ceil(Math.abs(cur-c.w)/left/15)*15; cur = cur>c.w ? Math.max(c.w,cur-st) : Math.min(c.w,cur+st); left--; wakes.push({d:x.d,w:cur,set:true}); } else { cur=wakeOf(x.d); wakes.push({d:x.d, w:cur}); } });
+  // Ideal: 1 Std. pro Nacht früher (später gehen 1,5 Std.). Nur so viele Nächte anpassen wie nötig, sonst gleichmäßig verteilen
+  const ideal = sg>0 ? 60 : 90, T=nFree+1, need=Math.max(1, Math.min(T, Math.ceil(Math.abs(diff)/ideal))); let keep=T-need;
+  const wakes=[]; let cur=base, left=need;
+  days.forEach((x,i)=>{ if(x.free){ if(i===0 && start!=null){ cur=start; wakes.push({d:x.d,w:cur,set:true,late:true}); if(keep>0) keep--; else left--; return; } if(keep>0){ keep--; wakes.push({d:x.d,w:cur,set:true}); return; } const st=Math.ceil(Math.abs(cur-c.w)/left/15)*15; cur = cur>c.w ? Math.max(c.w,cur-st) : Math.min(c.w,cur+st); left--; wakes.push({d:x.d,w:cur,set:true}); } else { cur=wakeOf(x.d); wakes.push({d:x.d, w:cur}); } });
   wakes.push({d:c.d, w:c.w, target:true, s:c.s});
   const nights=wakes.map(W=>{ const P0=addDays(W.d,-1); const b=W.w-goal-15, b7=W.w-7*60-15; const dt=m=>{ let day=W.d, x=m; if(x<0){ x+=1440; day=P0; } return atTime(day, minTxt(x)); };
     return {from:P0, to:W.d, wake:W.w, bed:((b%1440)+1440)%1440, bed7:((b7%1440)+1440)%1440, past:dt(b)<now||W.late, late:!!W.late, target:W.target, set:W.set, s:W.s}; });
@@ -5359,7 +5367,7 @@ function planNights(D, base, c, needFree){
 function shiftPlan(){
   const D=firstWakeDay(), prev=addDays(D,-1); if(state.shift[prev]==="nacht") return null;
   const base=wakeOf(prev); let c=null;
-  for(let i=0;i<=5;i++){ const d=addDays(D,i), s=state.shift[d]; if(!s) continue; if(s==="nacht") return null; const w=wakeOf(d); if(base-w>=60){ c={d,s,w}; break; } if(s==="frueh"||s==="spaet") break; }
+  for(let i=0;i<=5;i++){ const d=addDays(D,i), s=state.shift[d]; if(!s) continue; if(s==="nacht") return null; if(s!=="frueh" && s!=="spaet") continue; const w=wakeOf(d); if(base-w>=60){ c={d,s,w}; break; } if(s==="frueh"||s==="spaet") break; }
   if(!c) return null;
   return planNights(D, base, c, true);
 }
@@ -5368,20 +5376,31 @@ function planRowsEl(pl, label){
   const t=el("div","shiftPlan"); pl.nights.forEach((n,i)=>{ const row=el("div","spr"+(n.target?" tgt":""));
     const lab=el("div","spl"); lab.append(el("b",null,(i===0&&(n.to===today||n.to===addDays(today,1))?"Heute Nacht · ":"")+wd(n.from)+" → "+wd(n.to)+" "+parseKey(n.to).getDate()+"."+(parseKey(n.to).getMonth()+1)+"."));
     const bed = n.past ? "jetzt" : minTxt(n.bed)+(Math.abs(n.bed7-n.bed)>=30?", spätestens "+minTxt(n.bed7):"");
-    const d=el("div","spv"); d.append(el("span",null,"🛏️ ins Bett "+bed), el("span",null,"⏰ aufstehen "+minTxt(n.wake)+(n.target&&label?" · "+label:""))); row.append(lab,d); t.append(row); });
+    const d=el("div","spv"); d.append(el("span",null,"🛏️ ins Bett "+bed), el("span",null,"⏰ aufstehen "+minTxt(n.wake)+(n.target&&label?" · "+label:""))); row.append(lab,d);
+    { const pw= i>0 ? pl.nights[i-1].wake : pl.base, dv=n.wake-pw; if(Math.abs(dv)>=15) lab.append(el("span","spStep"+(Math.abs(dv)>120?" big":""), (dv<0?"−":"+")+hTxtS(Math.abs(dv)).replace(" h"," Std."))); }
+    const al=(state.alarms||{})[n.to]; if(al && al.w===minTxt(n.wake)) lab.append(el("span","spAl"+(al.set?" on":""), al.set?"⏰ Wecker gestellt":"⏰ kommt am Vorabend"));
+    t.append(row); });
   return t;
 }
 function planApplyBtn(pl, withTarget){
   const sets=pl.wakes.filter(x=>x.set||(withTarget&&x.target)), done=sets.length && sets.every(x=>state.wake[x.d]===minTxt(x.w));
   const b=el("button","btn small"+(done?" ghost":""),done?"✓ Übernommen, Tagesablauf passt sich an":"So übernehmen"); b.addEventListener("click",async()=>{ state.wakeMan=state.wakeMan||{}; sets.forEach(x=>{ state.wake[x.d]=minTxt(x.w); state.wakeMan[x.d]=true; }); alarmPlan(pl.wakes.filter(x=>x.set||x.target)); persist(); render(); const got=await alarmCheck(true); toast("Aufstehzeiten übernommen"+(got?", Wecker auf "+got+" gestellt":"")); scheduleSoon && scheduleSoon(); });
-  const w=el("div"); w.append(b, el("div","note", ALARM ? "⏰ Den Wecker stellt die App automatisch in deiner Uhr App, jeweils für den nächsten Morgen. Am Abend davor kommt eine Erinnerung, antippen reicht." : "⏰ In der App wird der Wecker automatisch gestellt, im Browser geht das nicht.")); return w;
+  const w=el("div"); w.append(b);
+  if(ALARM){ const now=new Date(), nx=pl.wakes.filter(x=>x.set||x.target).map(x=>({d:x.d,w:minTxt(x.w),at:atTime(x.d,minTxt(x.w))})).filter(x=>x.at>now).sort((a,b)=>a.at-b.at)[0];
+    if(nx){ const soon=nx.at-now<=24*3600000, wd=parseKey(nx.d).toLocaleDateString("de-DE",{weekday:"short"}).replace(".","");
+      const ab=el("button","btn small ghost","⏰ Wecker für "+wd+" "+nx.w+" stellen"); ab.disabled=!soon;
+      ab.addEventListener("click",async()=>{ const [h,m]=nx.w.split(":").map(Number); try{ await ALARM.set({hour:h,minute:m,label:"Winterarc · "+parseKey(nx.d).toLocaleDateString("de-DE",{weekday:"long"}),skipUi:false}); state.alarms=state.alarms||{}; state.alarms[nx.d]={w:nx.w,set:true}; persist(); render(); }catch(e){ toast("Keine Uhr App gefunden"); } });
+      w.append(ab); }
+    w.append(el("div","note", "⏰ Nach „So übernehmen“ stellt die App den Wecker für den nächsten Morgen automatisch. Für die Nächte danach kommt am Abend vorher eine Erinnerung, antippen reicht."+(nx && nx.at-now>24*3600000?" Der nächste Wecker lässt sich erst ab dem Vortag stellen, das gibt Android so vor.":""))); }
+  else w.append(el("div","note","⏰ In der App stellt sich der Wecker automatisch, im Browser geht das nicht."));
+  return w;
 }
 function renderShiftPlan(k, box){
   const pl=shiftPlan(); if(!pl) return false; const nm=SHIFT_NAMES[pl.c.s];
   const h=el("div","between"); h.append(el("h3",null,"🌅 Sanft umstellen auf "+nm), el("span","pill",String(Math.round(pl.diff/60*10)/10).replace(".",",")+" Std. früher")); box.append(h);
-  box.append(el("div","note","Von "+minTxt(pl.base)+" auf "+minTxt(pl.c.w)+" Uhr, verteilt aufs ganze Wochenende bis zur "+nm+". Morgens direkt helles Licht, kein Mittagsschlaf, abends Licht dimmen."+(pl.nights[0].late?" Du bist noch wach: heute Nacht reichen ca. 7 Std., dann wirst du morgen Abend früher müde.":"")));
+  box.append(el("div","note","Von "+minTxt(pl.base)+" auf "+minTxt(pl.c.w)+" Uhr bis zur "+nm+". Am besten klappt 1 Std. pro Nacht früher, bis 2 Std. geht mit Tricks: morgens direkt helles Licht, kein Mittagsschlaf, abends Licht dimmen."+(pl.nights[0].late?" Du bist noch wach: heute Nacht reichen ca. 7 Std., dann wirst du morgen Abend früher müde.":"")));
   box.append(planRowsEl(pl, nm));
-  if(pl.jump>=120) box.append(el("div","note","Größter Sprung "+durTxt(pl.jump).replace(/\.$/,"")+". Sanfter geht es übers Wochenende nicht, ab dem zweiten Arbeitstag wird es leichter."));
+  if(pl.jump>120) box.append(el("div","note","Größter Sprung "+durTxt(pl.jump).replace(/\.$/,"")+". Mehr als 2 Std. in einer Nacht ist viel, sanfter geht es mit den freien Tagen aber nicht. Ab dem zweiten Arbeitstag wird es leichter."));
   box.append(planApplyBtn(pl,false));
   return true;
 }
@@ -5401,7 +5420,7 @@ function renderSleepPlan(out){
     const pl=planNights(start, base, {d:T, w:tw, s:state.shift[T]}, false); if(!pl) return;
     const df=pl.base-tw; res.append(el("div","note", Math.abs(df)<30 ? "Kaum Unterschied zu deinem Rhythmus ("+minTxt(pl.base)+" Uhr), einfach so schlafen gehen." : "Von "+minTxt(pl.base)+" auf "+minTxt(tw)+" Uhr, "+durTxt(Math.abs(df))+(df>0?" früher":" später")+", gestaffelt über "+pl.nights.length+" Nächte."+(pl.nights[0].late?" Du bist noch wach: heute Nacht reichen ca. 7 Std.":"")));
     res.append(planRowsEl(pl, null));
-    if(pl.jump>=120) res.append(el("div","note","Größter Sprung "+durTxt(pl.jump).replace(/\.$/,"")+". Mehr Nächte bis zum Tag machen es sanfter."));
+    if(pl.jump>120) res.append(el("div","note","Größter Sprung "+durTxt(pl.jump).replace(/\.$/,"")+". Ideal ist 1 Std. pro Nacht. Mehr Nächte bis zum Tag machen es sanfter."));
     res.append(planApplyBtn(pl,true)); };
   sel.addEventListener("change",()=>{ slPlanDay=sel.value; slPlanWake=minTxt(wakeOf(slPlanDay)); ti.value=slPlanWake; draw(); });
   ti.addEventListener("input",()=>{ slPlanWake=ti.value; draw(); });
