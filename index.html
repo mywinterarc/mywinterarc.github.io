@@ -811,6 +811,10 @@ body[data-tab="training"]::before{filter:hue-rotate(140deg)}body[data-tab="essen
 .shiftPlan .spStep.big{background:color-mix(in srgb,#F0566A 16%,transparent);color:#F0566A}
 .shiftPlan .spAl{font-size:11px;font-weight:700;color:var(--muted)}
 .shiftPlan .spAl.on{color:var(--done)}
+#pane .spst{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:1px}
+#pane .spb{width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--accent);font-size:19px;font-weight:800;line-height:1;padding:0}
+#pane .spv{min-width:34px;text-align:center;font-weight:800;font-size:15px}
+.chips.wrapc{flex-wrap:wrap;overflow:visible}
 
 :root{--mzb:color-mix(in srgb,var(--ink) 9%,var(--panel));--mz0:color-mix(in srgb,var(--ink) 20%,var(--panel))}
 .sheet{z-index:96}.toast{z-index:160}
@@ -1983,7 +1987,7 @@ function renderCaf(k){
   const addCaf=(n,mg,t)=>{ const atBed = bed && bed>new Date() ? cafLevel(bed)+mg*Math.pow(0.5,(bed-t)/3600000/CAF_HALF) : 0; state.caf.unshift({n,mg,t}); state.caf.sort((a,b)=>b.t-a.t); state.caf=state.caf.filter(c=>Date.now()-c.t<48*3600000); persist(); render(); toast(atBed>50 ? n+" eingetragen. Achtung, wird knapp für den Schlaf" : n+" eingetragen um "+hm(new Date(t))+" Uhr"); };
   const cf=coffeeSet();
   CAF_DRINKS.forEach(([n0,mg0,sub,ml])=>{ const isK=n0==="Kaffee", n=isK?coffeeName():n0, mg=isK?coffeeMg():mg0; const b=el("button"); b.append(document.createTextNode(isK?"Kaffee":n)); b.append(el("small",null,(isK?de(cf.ml)+" ml"+(coffeeMilk()?" + Milch":"")+" · ":ml?ml+" ml Milch · ":"")+mg+" mg")); if(sub) b.title=sub;
-    b.addEventListener("click",()=>{ if(isK){ const mk=coffeeMilk(); if(mk) dayFood(calToday()).push(Object.assign({t:Date.now()},mk)); } else if(ml){ dayFood(calToday()).push(Object.assign({t:Date.now()},drinkMilk(n0,ml))); } addCaf(n,mg,Date.now()); }); cb.append(b); });
+    b.addEventListener("click",()=>{ if(isK || ml!=null) openDrink(n0,n,mg,isK?coffeeSet().milkMl:ml,isK,addCaf); else addCaf(n,mg,Date.now()); }); cb.append(b); });
   const own=el("button"); own.append(document.createTextNode("Eigenes")); own.append(el("small",null,"mit Uhrzeit")); own.addEventListener("click",()=>openCaf(null)); cb.append(own);
   if(!(document.activeElement && $("cafCoffee").contains(document.activeElement))) drawCoffee();
   const ul=$("cafLog"); ul.innerHTML="";
@@ -5730,6 +5734,33 @@ function motionInit(){
 
 // v2.0.73: Klasse sheetOpen immer passend zum Fenster
 try{ const shx=document.getElementById("sheet"); new MutationObserver(()=>{ document.documentElement.classList.toggle("sheetOpen", !shx.hidden && !shx.classList.contains("closing")); }).observe(shx,{attributes:true,attributeFilter:["hidden","class"]}); }catch(e){}
+
+// v2.0.75: Kaffee mit Milch: Menge und Milchsorte beim Eintragen wählen, Empfehlung vorausgewählt
+const SHOTS={"Espresso":1,"Doppelter Espresso":2,"Cappuccino":1,"Latte Macchiato":1,"Flat White":2};
+function milkEntry(n,ml,key){ const m=MILK[key]||MILK.m15, f=ml/100; return {n:n+" ("+ml+" ml "+m[0]+")", kcal:Math.round(m[1]*f), p:Math.round(m[2]*f*10)/10, c:Math.round(m[3]*f*10)/10, f:Math.round(m[4]*f*10)/10}; }
+function openDrink(n0, n, mg0, def, isK, addCaf){
+  const cs=coffeeSet(), last=(state.drinkLast||{})[n0]; let ml=def||0, milk=cs.milk && cs.milk!=="none" ? cs.milk : "m15", shots=SHOTS[n0]||0;
+  openSheet(p=>{ sheetHead(p,"☕ "+n);
+    const out=el("div","alert ok"); const draw=()=>{ const mg=shots? Math.round(mg0/(SHOTS[n0]||1)*shots) : mg0, me=ml>0?milkEntry(n0,ml,milk):null; out.textContent=mg+" mg Koffein"+(me?" · "+me.kcal+" kcal aus "+ml+" ml "+MILK[milk][0]+" (P "+fmtAmt(me.p)+")":" · ohne Milch"); return mg; };
+    if(shots){ const st=el("div","between"); st.append(el("b",null,"Shots Espresso")); const sp=el("div","spst"); const mi=el("button","spb","−"), pl=el("button","spb","+"), v=el("span","spv num",String(shots)); mi.onclick=()=>{ shots=Math.max(1,shots-1); v.textContent=shots; draw(); }; pl.onclick=()=>{ shots=Math.min(4,shots+1); v.textContent=shots; draw(); }; sp.append(mi,v,pl); st.append(sp); p.append(st); }
+    p.append(el("span","label","Milch in ml"+(def?" · Empfehlung "+def+" ml":"")));
+    const ch=el("div","chips wrapc"); const opts=[0,30,50,80,100,120,150,200,250]; if(def && !opts.includes(def)) opts.push(def); opts.sort((a,b)=>a-b);
+    const inp=el("input","num"); inp.type="number"; inp.inputMode="numeric"; inp.min=0; inp.max=500; inp.value=ml; inp.style.cssText="max-width:110px";
+    const mark=()=>ch.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", Number(b.dataset.v)===ml?"true":"false"));
+    opts.forEach(v=>{ const b=el("button",null,v===0?"ohne":v+(v===def?" ★":"")); b.dataset.v=v; b.onclick=()=>{ ml=v; inp.value=v; mark(); draw(); }; ch.append(b); }); p.append(ch);
+    const row=el("div","row nowrap"); row.style.cssText="align-items:center;gap:8px;margin-top:4px"; row.append(el("span","note","Eigene Menge"), inp, el("span","note","ml")); p.append(row);
+    inp.addEventListener("input",()=>{ ml=Math.max(0,Math.round(num(inp.value)||0)); mark(); draw(); });
+    if(last && last.ml!==def){ const lb=el("button","link","Wie letztes Mal: "+last.ml+" ml "+(MILK[last.milk]||MILK.m15)[0]); lb.onclick=()=>{ ml=last.ml; milk=last.milk||milk; inp.value=ml; mark(); msg(); draw(); }; p.append(lb); }
+    const seg=el("div","seg"); seg.style.marginTop="8px"; const msg=()=>seg.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===milk?"true":"false"));
+    ["m15","m35","oat"].forEach(k=>{ const b=el("button",null,MILK[k][0]); b.dataset.v=k; b.onclick=()=>{ milk=k; msg(); draw(); }; seg.append(b); }); p.append(el("span","label","Milchsorte"), seg);
+    p.append(out); mark(); msg(); draw();
+    const go=el("button","btn wide","Eintragen"); go.onclick=()=>{ const mg=draw(); if(ml>0) dayFood(calToday()).push(Object.assign({t:Date.now()}, isK? Object.assign(milkEntry("Kaffee",ml,milk),{n:"Kaffee mit "+ml+" ml "+MILK[milk][0]}) : milkEntry(n0,ml,milk)));
+      state.drinkLast=state.drinkLast||{}; state.drinkLast[n0]={ml,milk,shots}; closeSheet(); addCaf(n+(shots && shots!==(SHOTS[n0]||0)?" ("+shots+" Shots)":""),mg,Date.now()); };
+    p.append(go);
+    p.append(el("div","note","Unterwegs im Café: einfach die Empfehlung lassen. Typisch sind Cappuccino 120 ml, Latte Macchiato 200 ml, Flat White 120 ml Milch."));
+  });
+}
+
 // ---------- Start
 (async function(){
   try{ const m=location.hash.match(/^#umzug=([A-Za-z0-9_-]+)/); if(m){ history.replaceState(null,"",location.pathname+location.search);
