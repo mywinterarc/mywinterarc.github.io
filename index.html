@@ -826,6 +826,7 @@ body[data-tab="training"]::before{filter:hue-rotate(140deg)}body[data-tab="essen
 #rulesCard .ruleList{display:flex;flex-direction:column;gap:10px;margin:10px 0}
 #rulesCard .rule{display:grid;grid-template-columns:30px 1fr;gap:8px;align-items:start}
 #rulesCard .rule .re{font-size:20px;line-height:1.2}
+.syncOpt{padding:12px;border-radius:16px;background:var(--bg);display:flex;flex-direction:column;gap:4px;margin:8px 0}
 
 :root{--mzb:color-mix(in srgb,var(--ink) 9%,var(--panel));--mz0:color-mix(in srgb,var(--ink) 20%,var(--panel))}
 .sheet{z-index:96}.toast{z-index:160}
@@ -1705,7 +1706,8 @@ function normalize(s){
   return s;
 }
 let saveTimer = null;
-function persist(){ state.updatedAt = Date.now(); clearTimeout(saveTimer); saveTimer = setTimeout(save, 300); scheduleSoon(); cloudUpload(); }
+const BOOT_AT=Date.now();
+function persist(){ if(!(typeof FB==='function' && FB() && !cloudReady && Date.now()-BOOT_AT<10000)) state.updatedAt = Date.now(); clearTimeout(saveTimer); saveTimer = setTimeout(save, 300); scheduleSoon(); cloudUpload(); }
 async function save(){
   const json = JSON.stringify(state);
   try{ localStorage.setItem("winterplan", json); }catch(e){}
@@ -4355,8 +4357,8 @@ let DEVICE = null; try{ DEVICE = localStorage.getItem("wp_device"); if(!DEVICE){
 let fbUser=null, unsubCloud=null, uploadT=null, syncStatus="nicht angemeldet";
 const FB = () => window.WPFB || null;
 function cloudUpload(now){
-  if(!fbUser || !FB()) return; clearTimeout(uploadT);
-  uploadT=setTimeout(async()=>{ try{ await FB().save(fbUser.uid,{json:JSON.stringify(state), updatedAt:state.updatedAt, device:DEVICE}); syncStatus="synchron"; }catch(e){ syncStatus="Hochladen fehlgeschlagen, versuche es später nochmal"; } renderSyncLine(); }, now?50:1500);
+  if(!fbUser || !FB() || !cloudReady) return; clearTimeout(uploadT);
+  uploadT=setTimeout(async()=>{ try{ const up=state.updatedAt; await FB().save(fbUser.uid,{json:JSON.stringify(state), updatedAt:up, device:DEVICE}); state.syncBase=up; try{ save(); }catch(e){} syncStatus="synchron"; }catch(e){ syncStatus="Hochladen fehlgeschlagen, versuche es später nochmal"; } renderSyncLine(); }, now?50:1500);
 }
 function applyRemote(data){
   try{ const s=normalize(JSON.parse(data.json)); s.updatedAt=data.updatedAt; state=s; save(); scheduleSoon(); }catch(e){ return; }
@@ -4366,15 +4368,13 @@ function applyRemote(data){
 }
 function startCloud(user){
   if(unsubCloud){ unsubCloud(); unsubCloud=null; }
-  fbUser=user||null;
+  fbUser=user||null; cloudReady=false; cloudAsk=false;
   if(!fbUser){ syncStatus="nicht angemeldet"; renderSyncLine(); return; }
   syncStatus="verbinde …"; renderSyncLine();
   unsubCloud = FB().watch(fbUser.uid, (data, pending)=>{
     if(pending) return;
-    if(!data){ cloudUpload(true); if(!P().setup) setTimeout(()=>openOnboarding(),300); return; }
-    if((data.updatedAt||0) > (state.updatedAt||0)){ applyRemote(data); syncStatus="synchron"; if(data.device!==DEVICE) toast("Daten vom anderen Gerät geladen"); }
-    else if((data.updatedAt||0) < (state.updatedAt||0)) cloudUpload(true);
-    else syncStatus="synchron";
+    if(!data){ cloudReady=true; cloudUpload(true); if(!P().setup) setTimeout(()=>openOnboarding(),300); return; }
+    cloudDecide(data);
     renderSyncLine();
   }, ()=>{ syncStatus="Sync gestört, prüfe die Internetverbindung"; renderSyncLine(); });
 }
@@ -5852,6 +5852,34 @@ function renderTrainRules(){
   const ul=el("div","ruleList"); TRAIN_RULES.forEach(([e,t,x])=>{ const r=el("div","rule"); r.append(el("span","re",e)); const b=el("div"); b.append(el("b",null,t), el("div","note",x)); r.append(b); ul.append(r); }); d.append(ul);
   d.append(el("div","note","Quellen: ACSM Position Stand Krafttraining 2026, Metaanalysen zu Satzpausen (2024), Trainingsvolumen und Nähe zum Muskelversagen."));
   c.append(d); sec.append(c);
+}
+
+
+// v2.0.78: Sync mit Rückfrage: nie leere Daten über die Cloud schreiben, bei zwei unterschiedlichen Ständen fragen
+let cloudReady=false, cloudAsk=false;
+function stateSize(s){ try{ const f=Object.values(s.food||{}).reduce((a,d)=>a+(d||[]).length,0), t=((s.train||{}).log||[]).length, w=Object.keys(s.weights||{}).length; return {f,t,w,setup:!!(s.profile&&s.profile.setup), n:f+t+w}; }catch(e){ return {f:0,t:0,w:0,setup:false,n:0}; } }
+function sizeTxt(z){ return z.f+" Essen · "+z.t+" Trainings · "+z.w+" Gewichte"; }
+function whenTxt(t){ if(!t) return "unbekannt"; const d=new Date(t); return d.toLocaleDateString("de-DE",{day:"numeric",month:"numeric"})+", "+hm(d)+" Uhr"; }
+function cloudDecide(data){
+  const remote=(()=>{ try{ return JSON.parse(data.json); }catch(e){ return null; } })(); if(!remote) return;
+  const L=stateSize(state), R=stateSize(remote), base=state.syncBase||0, ru=data.updatedAt||0, lu=state.updatedAt||0;
+  const done=()=>{ cloudReady=true; syncStatus="synchron"; renderSyncLine(); };
+  if(ru===lu){ state.syncBase=ru; save(); return done(); }
+  // Dieses Gerät ist frisch oder fast leer: immer den Cloud Stand nehmen
+  if(!L.setup || L.n<3){ applyRemote(data); state.syncBase=ru; save(); toast("Dein Stand aus der Cloud ist geladen"); return done(); }
+  // Normale Fälle: nur eine Seite hat sich seit dem letzten Abgleich geändert
+  if(base && ru===base && lu>ru){ cloudReady=true; cloudUpload(true); return; }
+  if(base && lu===base && ru>lu){ applyRemote(data); state.syncBase=ru; save(); if(data.device!==DEVICE) toast("Daten vom anderen Gerät geladen"); return done(); }
+  // Beide geändert oder erster Abgleich auf diesem Gerät: fragen
+  if(cloudAsk) return; cloudAsk=true;
+  openSheet(p=>{ sheetHead(p,"☁️ Welcher Stand soll gelten?");
+    p.append(el("div","note","Auf diesem Gerät und in der Cloud sind unterschiedliche Daten. Wähle, welcher Stand bleiben soll. Der andere wird ersetzt."));
+    const box=(t,z,u,dev,btn,fn,main)=>{ const c=el("div","syncOpt"); c.append(el("b",null,t), el("div","note","Zuletzt geändert: "+whenTxt(u)+(dev?" · "+dev:"")), el("div","note",sizeTxt(z))); const b=el("button","btn wide"+(main?"":" ghost"),btn); b.onclick=fn; c.append(b); p.append(c); };
+    const cloudNewer=ru>=lu;
+    box("☁️ Cloud", R, ru, data.device===DEVICE?"dieses Gerät":"anderes Gerät", "Cloud Stand laden", ()=>{ cloudAsk=false; closeSheet(); applyRemote(data); state.syncBase=ru; save(); toast("Cloud Stand geladen"); done(); }, cloudNewer);
+    box("📱 Dieses Gerät", L, lu, "", "Diesen Stand hochladen", ()=>{ cloudAsk=false; closeSheet(); state.updatedAt=Date.now(); cloudReady=true; cloudUpload(true); toast("Dieser Stand ist jetzt in der Cloud"); }, !cloudNewer);
+    p.append(el("div","note","Tipp: Der Stand mit mehr Einträgen und dem neueren Datum ist meistens der richtige."));
+  }, "sync");
 }
 
 // ---------- Start
