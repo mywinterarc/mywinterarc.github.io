@@ -815,6 +815,12 @@ body[data-tab="training"]::before{filter:hue-rotate(140deg)}body[data-tab="essen
 #pane .spb{width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--accent);font-size:19px;font-weight:800;line-height:1;padding:0}
 #pane .spv{min-width:34px;text-align:center;font-weight:800;font-size:15px}
 .chips.wrapc{flex-wrap:wrap;overflow:visible}
+#alarmCard .alList{display:flex;flex-direction:column;gap:6px;margin:6px 0 4px}
+#alarmCard .alRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:14px;background:var(--bg)}
+#alarmCard .alRow b{font-size:20px;font-family:var(--mono);margin-right:4px}
+#alarmCard .alRow span{color:var(--muted);font-size:13px}
+#alarmCard .alRow.off b{opacity:.4;text-decoration:line-through}
+#alarmCard .seg{margin-bottom:6px}
 
 :root{--mzb:color-mix(in srgb,var(--ink) 9%,var(--panel));--mz0:color-mix(in srgb,var(--ink) 20%,var(--panel))}
 .sheet{z-index:96}.toast{z-index:160}
@@ -1833,6 +1839,7 @@ async function refreshPerm(){
 }
 function measNextKey(){ const last = state.meas.length ? state.meas[0].d : null; return last ? addDays(last, P().measEvery||14) : calToday(); }
 async function scheduleAll(){
+  try{ waSync(); }catch(e){}
   if(!LN) return;
   try{ const pend = await LN.getPending(); const ids=(pend&&pend.notifications||[]).filter(n=>n.id!==REST_ID).map(n=>({id:n.id})); if(ids.length) await LN.cancel({notifications: ids}); }catch(e){}
   if(!state.notif.on || notifPerm!=="granted") return;
@@ -1909,7 +1916,7 @@ function widgetPush(){ clearTimeout(widgetT); widgetT=setTimeout(async ()=>{ try
   const js=JSON.stringify(Object.assign({},data,{u:0})); if(js===widgetLast) return; widgetLast=js;
   await Prefs.set({key:"widget", value:JSON.stringify(data)}); const WB=plug("WidgetBridge"); if(WB && WB.update) await WB.update();
 }catch(e){} }, 1500); }
-function render(){ try{ renderSleepCard(); }catch(e){}
+function render(){ try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
   applyPlan(); applyTheme(); STEP_GOAL = Number(P().stepGoal)||8000; widgetPush(); setTimeout(checkBadges, 50);
   const k = activeDay(), w = planWeek(k), ph = phase(w);
   $("dateLabel").textContent = (P().name ? "Hi "+P().name+" · " : "") + parseKey(k).toLocaleDateString("de-DE",{weekday:"long", day:"numeric", month:"long"}) + (k!==calToday() ? " · Schicht läuft noch" : "");
@@ -5382,15 +5389,16 @@ function planRowsEl(pl, label){
     const bed = n.past ? "jetzt" : minTxt(n.bed)+(Math.abs(n.bed7-n.bed)>=30?", spätestens "+minTxt(n.bed7):"");
     const d=el("div","spv"); d.append(el("span",null,"🛏️ ins Bett "+bed), el("span",null,"⏰ aufstehen "+minTxt(n.wake)+(n.target&&label?" · "+label:""))); row.append(lab,d);
     { const pw= i>0 ? pl.nights[i-1].wake : pl.base, dv=n.wake-pw; if(Math.abs(dv)>=15) lab.append(el("span","spStep"+(Math.abs(dv)>120?" big":""), (dv<0?"−":"+")+hTxtS(Math.abs(dv)).replace(" h"," Std."))); }
-    const al=(state.alarms||{})[n.to]; if(al && al.w===minTxt(n.wake)) lab.append(el("span","spAl"+(al.set?" on":""), al.set?"⏰ Wecker gestellt":"⏰ kommt am Vorabend"));
+    const al=(state.alarms||{})[n.to]; if(al && al.w===minTxt(n.wake)) lab.append(el("span","spAl"+(al.set||waOn()?" on":""), waOn()? ((state.alarmSkip||{})[n.to]?"⏰ Wecker aus":"⏰ Wecker an") : al.set?"⏰ Wecker gestellt":"⏰ kommt am Vorabend"));
     t.append(row); });
   return t;
 }
 function planApplyBtn(pl, withTarget){
   const sets=pl.wakes.filter(x=>x.set||(withTarget&&x.target)), done=sets.length && sets.every(x=>state.wake[x.d]===minTxt(x.w));
-  const b=el("button","btn small"+(done?" ghost":""),done?"✓ Übernommen, Tagesablauf passt sich an":"So übernehmen"); b.addEventListener("click",async()=>{ state.wakeMan=state.wakeMan||{}; sets.forEach(x=>{ state.wake[x.d]=minTxt(x.w); state.wakeMan[x.d]=true; }); alarmPlan(pl.wakes.filter(x=>x.set||x.target)); persist(); render(); const got=await alarmCheck(true); toast("Aufstehzeiten übernommen"+(got?", Wecker auf "+got+" gestellt":"")); scheduleSoon && scheduleSoon(); });
+  const b=el("button","btn small"+(done?" ghost":""),done?"✓ Übernommen, Tagesablauf passt sich an":"So übernehmen"); b.addEventListener("click",async()=>{ state.wakeMan=state.wakeMan||{}; sets.forEach(x=>{ state.wake[x.d]=minTxt(x.w); state.wakeMan[x.d]=true; }); alarmPlan(pl.wakes.filter(x=>x.set||x.target)); persist(); render(); if(waOn()){ await waSync(true); toast("Aufstehzeiten übernommen, Winterarc Wecker ist gestellt"); } else { const got=await alarmCheck(true); toast("Aufstehzeiten übernommen"+(got?", Wecker auf "+got+" gestellt":"")); } scheduleSoon && scheduleSoon(); });
   const w=el("div"); w.append(b);
-  if(ALARM){ const now=new Date(), nx=pl.wakes.filter(x=>x.set||x.target).map(x=>({d:x.d,w:minTxt(x.w),at:atTime(x.d,minTxt(x.w))})).filter(x=>x.at>now).sort((a,b)=>a.at-b.at)[0];
+  if(waOn()){ w.append(el("div","note","⏰ Der Winterarc Wecker klingelt automatisch zu diesen Zeiten. Einstellen kannst du ihn unter Woche bei Wecker.")); }
+  else if(ALARM){ const now=new Date(), nx=pl.wakes.filter(x=>x.set||x.target).map(x=>({d:x.d,w:minTxt(x.w),at:atTime(x.d,minTxt(x.w))})).filter(x=>x.at>now).sort((a,b)=>a.at-b.at)[0];
     if(nx){ const soon=nx.at-now<=24*3600000, wd=parseKey(nx.d).toLocaleDateString("de-DE",{weekday:"short"}).replace(".","");
       const ab=el("button","btn small ghost","⏰ Wecker für "+wd+" "+nx.w+" stellen"); ab.disabled=!soon;
       ab.addEventListener("click",async()=>{ const [h,m]=nx.w.split(":").map(Number); try{ await ALARM.set({hour:h,minute:m,label:"Winterarc · "+parseKey(nx.d).toLocaleDateString("de-DE",{weekday:"long"}),skipUi:false}); state.alarms=state.alarms||{}; state.alarms[nx.d]={w:nx.w,set:true}; persist(); render(); }catch(e){ toast("Keine Uhr App gefunden"); } });
@@ -5676,6 +5684,7 @@ const ALARM = isNative ? plug("Alarm") : null;
 function alarmPlan(list){ state.alarms=state.alarms||{}; list.forEach(x=>{ const w=minTxt(x.w), cur=state.alarms[x.d]; if(cur && cur.w===w) return; state.alarms[x.d]={w, set:false}; }); }
 let alarmBusy=false;
 async function alarmCheck(quiet){
+  if(waOn()) return null;
   if(!ALARM || alarmBusy || !state.alarms) return null; alarmBusy=true; let got=null;
   try{ const now=new Date();
     for(const d of Object.keys(state.alarms).sort()){ const a=state.alarms[d], at=atTime(d,a.w);
@@ -5688,7 +5697,7 @@ async function alarmCheck(quiet){
   if(got && !quiet) toast("⏰ Wecker für morgen auf "+got+" gestellt");
   return got;
 }
-function alarmReminders(now){ const out=[]; Object.keys(state.alarms||{}).forEach((d,i)=>{ const a=state.alarms[d]; if(a.set) return; const wm=toMin(a.w), goal=(P().sleepGoal||8)*60; const at=new Date(atTime(d,a.w).getTime()-(goal+75)*60000); if(at>now) out.push({id:70+i%9, title:"⏰ Wecker für morgen "+a.w+" stellen", body:"Antippen, die App stellt ihn automatisch in deiner Uhr App.", at}); }); return out; }
+function alarmReminders(now){ const out=[]; if(waOn()) return out; Object.keys(state.alarms||{}).forEach((d,i)=>{ const a=state.alarms[d]; if(a.set) return; const wm=toMin(a.w), goal=(P().sleepGoal||8)*60; const at=new Date(atTime(d,a.w).getTime()-(goal+75)*60000); if(at>now) out.push({id:70+i%9, title:"⏰ Wecker für morgen "+a.w+" stellen", body:"Antippen, die App stellt ihn automatisch in deiner Uhr App.", at}); }); return out; }
 
 
 // v2.0.71: Bewegungen (Navigation, Einblenden, Haken, Zahlen, kurze Vibration)
@@ -5759,6 +5768,53 @@ function openDrink(n0, n, mg0, def, isK, addCaf){
     p.append(go);
     p.append(el("div","note","Unterwegs im Café: einfach die Empfehlung lassen. Typisch sind Cappuccino 120 ml, Latte Macchiato 200 ml, Flat White 120 ml Milch."));
   });
+}
+
+
+// v2.0.76: Eigener Winterarc Wecker (nativ: klingelt laut, Ausschalten nur durch Halten oder Rechnen)
+const WA = isNative ? plug("WinterAlarm") : null;
+function waCfg(){ const c=state.alarmCfg=state.alarmCfg||{}; return {on:c.on!==false, work:c.work!==false, snooze:c.snooze||5, maxSnooze:c.maxSnooze!=null?c.maxSnooze:2, mode:c.mode||"hold", ramp:c.ramp!==false}; }
+function waOn(){ return !!WA && waCfg().on; }
+function waDesired(){
+  const c=waCfg(), now=new Date(), out=[]; state.alarmSkip=state.alarmSkip||{};
+  for(let i=0;i<9;i++){ const d=addDays(calToday(),i), sh=state.shift[d]; let w=null, why="";
+    const pa=(state.alarms||{})[d]; if(pa && pa.w){ w=pa.w; why="Umstellplan"; }
+    else if(c.work && (sh==="frueh"||sh==="spaet"||sh==="nacht")){ w=wakeFor(d,sh); why=SHIFT_NAMES[sh]; }
+    if(!w || state.alarmSkip[d]) { if(w) out.push({d,w,why,skip:true}); continue; }
+    const at=atTime(d,w); if(at<=now) continue;
+    out.push({d, w, why, at:at.getTime(), id:Number(d.replace(/-/g,"")), label:"Winterarc · "+parseKey(d).toLocaleDateString("de-DE",{weekday:"long"})+(why?" · "+why:"")}); }
+  return out;
+}
+let waLast="";
+async function waSync(force){
+  if(!WA) return; const c=waCfg(); const list=c.on ? waDesired().filter(x=>!x.skip).map(x=>({id:x.id, at:x.at, label:x.label})) : [];
+  const key=JSON.stringify([list,c]); if(!force && key===waLast) return; waLast=key;
+  try{ await WA.sync({alarms:list, cfg:{snooze:c.snooze, maxSnooze:c.maxSnooze, mode:c.mode, ramp:c.ramp, minVol:0.85}}); }catch(e){ console.error(e); }
+}
+function renderAlarmCard(){
+  let card=$("alarmCard"); if(!card){ const slc=$("slOut") && $("slOut").closest(".card"); if(!slc) return; card=el("div","card"); card.id="alarmCard"; slc.after(card); }
+  card.innerHTML=""; const h=el("div","between"); h.append(el("h3",null,"⏰ Wecker")); card.append(h);
+  if(!WA){ card.append(el("div","note","Den Winterarc Wecker gibt es nur in der App. Er klingelt laut, auch auf dem Sperrbildschirm, und lässt sich nur durch 3 Sekunden Halten oder eine Rechenaufgabe ausschalten.")); return; }
+  const c=waCfg(), set=(k,v)=>{ state.alarmCfg[k]=v; persist(); renderAlarmCard(); waSync(true); };
+  toggleRow(card,"Winterarc Wecker",c.on,()=>set("on",!c.on),"Klingelt laut über dem Sperrbildschirm, egal wie leise das Handy steht");
+  if(!c.on) return;
+  toggleRow(card,"An Arbeitstagen automatisch",c.work,()=>set("work",!c.work),"Früh, Spät und Nacht: weckt zur Aufstehzeit aus dem Tagesablauf. Umstellpläne kommen immer dazu.");
+  const L=waDesired().slice(0,5); const ul=el("div","alList");
+  if(!L.length) ul.append(el("div","note","Gerade kein Wecker geplant. Trag deine Schichten ein oder übernimm einen Umstellplan."));
+  L.forEach(x=>{ const r=el("div","alRow"+(x.skip?" off":"")); const t=el("div"); t.append(el("b",null,x.w), el("span",null," "+parseKey(x.d).toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"numeric"})+" · "+x.why));
+    r.append(t, sw(!x.skip,()=>{ state.alarmSkip=state.alarmSkip||{}; if(x.skip) delete state.alarmSkip[x.d]; else state.alarmSkip[x.d]=true; persist(); renderAlarmCard(); waSync(true); },"Wecker "+x.d)); ul.append(r); });
+  card.append(ul);
+  const seg=(lab,k,opts)=>{ card.append(el("span","label",lab)); const s=el("div","seg"); opts.forEach(([v,t])=>{ const b=el("button",null,t); b.setAttribute("aria-pressed",c[k]===v?"true":"false"); b.onclick=()=>set(k,v); s.append(b); }); card.append(s); };
+  seg("Ausschalten durch","mode",[["hold","3 Sek. halten"],["math","Rechenaufgabe"]]);
+  seg("Schlummern","snooze",[[5,"5 Min."],[9,"9 Min."],[10,"10 Min."]]);
+  seg("Wie oft schlummern","maxSnooze",[[0,"nie"],[1,"1×"],[2,"2×"],[3,"3×"]]);
+  toggleRow(card,"Langsam lauter werden",c.ramp,()=>set("ramp",!c.ramp),"Startet leise und wird in ca. 30 Sek. voll laut");
+  const tb=el("button","btn ghost wide","🔔 Probealarm in 10 Sek."); tb.onclick=async()=>{ await waSync(true); try{ await WA.test({seconds:10}); toast("Probealarm kommt in 10 Sekunden. Handy ruhig sperren."); }catch(e){ toast("Probealarm ging nicht"); } }; card.append(tb);
+  const warn=el("div"); card.append(warn);
+  WA.status().then(s=>{ const add=(t,what)=>{ const a=el("div","alert bad"); a.append(document.createTextNode(t+" ")); const b=el("button","btn small","Erlauben"); b.onclick=()=>WA.openSettings({what}); a.append(b); warn.append(a); };
+    if(!s.exact) add("Genaue Wecker sind gesperrt, dann klingelt er evtl. zu spät.","exact");
+    if(!s.fullScreen) add("Vollbild auf dem Sperrbildschirm ist aus, dann siehst du nur eine Mitteilung.","fullScreen");
+    if(!s.notif) add("Mitteilungen sind aus, dann kannst du den Wecker schlecht ausschalten.","notif"); }).catch(()=>{});
 }
 
 // ---------- Start
