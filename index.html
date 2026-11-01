@@ -821,6 +821,11 @@ body[data-tab="training"]::before{filter:hue-rotate(140deg)}body[data-tab="essen
 #alarmCard .alRow span{color:var(--muted);font-size:13px}
 #alarmCard .alRow.off b{opacity:.4;text-decoration:line-through}
 #alarmCard .seg{margin-bottom:6px}
+.hint.rir{margin-top:4px;padding:6px 10px;border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--ink)}
+#rulesCard summary{font-weight:800}
+#rulesCard .ruleList{display:flex;flex-direction:column;gap:10px;margin:10px 0}
+#rulesCard .rule{display:grid;grid-template-columns:30px 1fr;gap:8px;align-items:start}
+#rulesCard .rule .re{font-size:20px;line-height:1.2}
 
 :root{--mzb:color-mix(in srgb,var(--ink) 9%,var(--panel));--mz0:color-mix(in srgb,var(--ink) 20%,var(--panel))}
 .sheet{z-index:96}.toast{z-index:160}
@@ -1916,7 +1921,7 @@ function widgetPush(){ clearTimeout(widgetT); widgetT=setTimeout(async ()=>{ try
   const js=JSON.stringify(Object.assign({},data,{u:0})); if(js===widgetLast) return; widgetLast=js;
   await Prefs.set({key:"widget", value:JSON.stringify(data)}); const WB=plug("WidgetBridge"); if(WB && WB.update) await WB.update();
 }catch(e){} }, 1500); }
-function render(){ try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
+function render(){ try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
   applyPlan(); applyTheme(); STEP_GOAL = Number(P().stepGoal)||8000; widgetPush(); setTimeout(checkBadges, 50);
   const k = activeDay(), w = planWeek(k), ph = phase(w);
   $("dateLabel").textContent = (P().name ? "Hi "+P().name+" · " : "") + parseKey(k).toLocaleDateString("de-DE",{weekday:"long", day:"numeric", month:"long"}) + (k!==calToday() ? " · Schicht läuft noch" : "");
@@ -2774,7 +2779,7 @@ async function restNotify(run, ex){
   try{ await LN.schedule({notifications:[{id:REST_ID, title:"Satzpause vorbei", body: ex ? "Weiter mit "+ex : "Nächster Satz", channelId:"timer", schedule:{at:new Date(run.rest.end), allowWhileIdle:true}}]}); }catch(e){}
 }
 function nextExName(run){ const ex=run.ex.find(x=>x.sets ? x.sets.some(s=>!s.done) : !x.done); return ex ? ex.name : null; }
-function startRest(run){ run.rest={end:Date.now()+run.restLen*1000, len:run.restLen}; restNotify(run, nextExName(run)); }
+function startRest(run,x){ if(x && !run.restMan && !x.cardio){ run.restLen=restFor(x); try{ $("restLen").textContent=mmss(run.restLen); }catch(e){} } run.rest={end:Date.now()+run.restLen*1000, len:run.restLen}; restNotify(run, nextExName(run)); }
 let actx=null; function beep(f,d){ try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); const o=actx.createOscillator(), g=actx.createGain(); o.frequency.value=f; o.type="sine"; g.gain.setValueAtTime(0.0001,actx.currentTime); g.gain.exponentialRampToValueAtTime(0.35,actx.currentTime+0.01); g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+d); o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+d+0.02); }catch(e){} }
 function liveTick(){
   const run=liveRun(); if(!run || $("live").hidden) return;
@@ -2789,7 +2794,7 @@ function liveTick(){
 }
 function restAction(a){
   const run=liveRun(); if(!run) return; const rs=run.rest;
-  if(a==="len"){ const L=[90,120,150,180]; run.restLen=L[(L.indexOf(run.restLen)+1)%L.length]; toast("Satzpause jetzt "+mmss(run.restLen)); $("restLen").textContent=mmss(run.restLen); persist(); return; }
+  if(a==="len"){ const L=[60,75,90,120,150,180]; run.restLen=L[(L.indexOf(run.restLen)+1)%L.length]; run.restMan=true; toast("Satzpause jetzt "+mmss(run.restLen)); $("restLen").textContent=mmss(run.restLen); persist(); return; }
   if(!rs) return;
   if(a==="pause"){ if(rs.paused!=null){ rs.end=Date.now()+rs.paused; rs.paused=null; } else { rs.paused=Math.max(0,rs.end-Date.now()); } }
   if(a==="plus"){ if(rs.paused!=null) rs.paused+=30000; else rs.end+=30000; rs.len+=30; }
@@ -2820,6 +2825,7 @@ function renderLive(){
     if(x.cardio){ const r=el("div","between"); r.append(el("span","note","Locker, Puls so dass du noch reden kannst.")); r.append(tickBtn(x.done,()=>{ x.done=!x.done; persist(); renderLive(); },"Cardio erledigt")); card.append(r); body.append(card); return; }
     const L=liftInfo(x.name), t=nextTarget(x.o,x.sr,L);
     if(t) card.append(el("div","goal","Ziel "+targetTxt(t)+(t.kind==="up"?" ▲ Gewicht rauf, letztes Mal alle Sätze oben geschafft":"")));
+    if(x.sets && !x.sets.every(s=>s.done)){ card.append(el("div","hint rir","💪 "+rirTxt(x, run.d)+" Pause "+mmss(restFor(x))+".")); }
     { const stl=stallInfo(x.name,x.o); if(stl) card.append(el("div","hint warnTxt","⏸ Seit "+stl.weeks+" Wochen gleich. Heute eine Wdh mehr oder etwas mehr Gewicht, sonst tut sich nichts.")); }
     const us=el("button","unitbtn",x.unit); us.title="kg oder lb"; us.addEventListener("click",()=>{ const nu=x.unit==="kg"?"lb":"kg"; x.sets.forEach(s=>{ if(s.w!==""&&!s.done) s.w=Math.round(conv(num(s.w),x.unit,nu)*100)/100; }); x.unit=nu; persist(); renderLive(); });
     const hdr=el("div","lrow lhdr"); const uh=el("span","label"); uh.append(document.createTextNode("Gewicht "), us); hdr.append(el("span","label","#"), uh, el("span","label","Wdh"), el("span","label","Letztes Mal"), el("span"));
@@ -2855,7 +2861,7 @@ function tickSet(run,x,s){
     if(best>0 && now>best*1.001 && !s.pr){ s.pr=true; toast("🏆 Neuer Rekord: "+fmtW(w)+" "+x.unit+" × "+r); }
   }
   const more = run.ex.some(e=>e.sets ? e.sets.some(z=>!z.done) : false);
-  if(more && !s.wu) startRest(run); else if(!more){ run.rest=null; restNotify(run); }
+  if(more && !s.wu) startRest(run,x); else if(!more){ run.rest=null; restNotify(run); }
   persist(); renderLive(); liveTick();
 }
 function finishLive(){
@@ -5773,7 +5779,7 @@ function openDrink(n0, n, mg0, def, isK, addCaf){
 
 // v2.0.76: Eigener Winterarc Wecker (nativ: klingelt laut, Ausschalten nur durch Halten oder Rechnen)
 const WA = isNative ? plug("WinterAlarm") : null;
-function waCfg(){ const c=state.alarmCfg=state.alarmCfg||{}; return {on:c.on!==false, work:c.work!==false, snooze:c.snooze||5, maxSnooze:c.maxSnooze!=null?c.maxSnooze:2, mode:c.mode||"hold", ramp:c.ramp!==false}; }
+function waCfg(){ const c=state.alarmCfg=state.alarmCfg||{}; return {on:c.on!==false, work:c.work!==false, snooze:c.snooze||5, maxSnooze:c.maxSnooze!=null?c.maxSnooze:0, mode:c.mode||"math", ramp:c.ramp===true, sound:c.sound||"beep", tasks:c.tasks||1}; }
 function waOn(){ return !!WA && waCfg().on; }
 function waDesired(){
   const c=waCfg(), now=new Date(), out=[]; state.alarmSkip=state.alarmSkip||{};
@@ -5789,7 +5795,7 @@ let waLast="";
 async function waSync(force){
   if(!WA) return; const c=waCfg(); const list=c.on ? waDesired().filter(x=>!x.skip).map(x=>({id:x.id, at:x.at, label:x.label})) : [];
   const key=JSON.stringify([list,c]); if(!force && key===waLast) return; waLast=key;
-  try{ await WA.sync({alarms:list, cfg:{snooze:c.snooze, maxSnooze:c.maxSnooze, mode:c.mode, ramp:c.ramp, minVol:0.85}}); }catch(e){ console.error(e); }
+  try{ await WA.sync({alarms:list, cfg:{snooze:c.snooze, maxSnooze:c.maxSnooze, mode:c.mode, ramp:c.ramp, minVol:0.9, sound:c.sound, tasks:c.tasks}}); }catch(e){ console.error(e); }
 }
 function renderAlarmCard(){
   let card=$("alarmCard"); if(!card){ const slc=$("slOut") && $("slOut").closest(".card"); if(!slc) return; card=el("div","card"); card.id="alarmCard"; slc.after(card); }
@@ -5805,16 +5811,47 @@ function renderAlarmCard(){
     r.append(t, sw(!x.skip,()=>{ state.alarmSkip=state.alarmSkip||{}; if(x.skip) delete state.alarmSkip[x.d]; else state.alarmSkip[x.d]=true; persist(); renderAlarmCard(); waSync(true); },"Wecker "+x.d)); ul.append(r); });
   card.append(ul);
   const seg=(lab,k,opts)=>{ card.append(el("span","label",lab)); const s=el("div","seg"); opts.forEach(([v,t])=>{ const b=el("button",null,t); b.setAttribute("aria-pressed",c[k]===v?"true":"false"); b.onclick=()=>set(k,v); s.append(b); }); card.append(s); };
-  seg("Ausschalten durch","mode",[["hold","3 Sek. halten"],["math","Rechenaufgabe"]]);
-  seg("Schlummern","snooze",[[5,"5 Min."],[9,"9 Min."],[10,"10 Min."]]);
+  seg("Ton","sound",[["beep","Piepen"],["siren","Sirene"],["alarm","Wechselton"],["system","Handy"]]);
+  seg("Ausschalten durch","mode",[["math","Rechnen"],["hold","3 Sek. halten"]]);
+  if(c.mode==="math") seg("Wie viele Aufgaben","tasks",[[1,"1"],[2,"2"],[3,"3"]]);
   seg("Wie oft schlummern","maxSnooze",[[0,"nie"],[1,"1×"],[2,"2×"],[3,"3×"]]);
-  toggleRow(card,"Langsam lauter werden",c.ramp,()=>set("ramp",!c.ramp),"Startet leise und wird in ca. 30 Sek. voll laut");
+  if(c.maxSnooze>0) seg("Schlummern","snooze",[[5,"5 Min."],[9,"9 Min."],[10,"10 Min."]]);
+  toggleRow(card,"Langsam lauter werden",c.ramp,()=>set("ramp",!c.ramp),"Aus: sofort voll laut. An: startet leiser und ist nach ca. 25 Sek. voll laut");
+  card.append(el("div","note","Lautstärketasten machen ihn nicht leiser, die Weckerlautstärke geht automatisch auf mindestens 90 %. Hörst du ihn nicht, macht er nach 20 Min. eine Minute Pause und klingelt dann weiter."));
   const tb=el("button","btn ghost wide","🔔 Probealarm in 10 Sek."); tb.onclick=async()=>{ await waSync(true); try{ await WA.test({seconds:10}); toast("Probealarm kommt in 10 Sekunden. Handy ruhig sperren."); }catch(e){ toast("Probealarm ging nicht"); } }; card.append(tb);
   const warn=el("div"); card.append(warn);
   WA.status().then(s=>{ const add=(t,what)=>{ const a=el("div","alert bad"); a.append(document.createTextNode(t+" ")); const b=el("button","btn small","Erlauben"); b.onclick=()=>WA.openSettings({what}); a.append(b); warn.append(a); };
     if(!s.exact) add("Genaue Wecker sind gesperrt, dann klingelt er evtl. zu spät.","exact");
     if(!s.fullScreen) add("Vollbild auf dem Sperrbildschirm ist aus, dann siehst du nur eine Mitteilung.","fullScreen");
     if(!s.notif) add("Mitteilungen sind aus, dann kannst du den Wecker schlecht ausschalten.","notif"); }).catch(()=>{});
+}
+
+
+// v2.0.77: Training nach aktuellem Stand (ACSM 2026, Metaanalysen): Pausen je Übung, Anstrengung (Wdh. Reserve), Regeln
+const COMPOUND=new Set(["quad","hinge","flach","schraeg","rudBrust","latWeit","latEng","rudKabel","presse","schulter","einbein"]);
+function isCompound(x){ try{ return COMPOUND.has(UNITS[x.u].s[x.i][0]); }catch(e){ return false; } }
+function restFor(x){ const r=parseSR(x.sr)||{lo:8}; if(isCompound(x)) return r.lo<=6?180: r.lo<=8?150:120; return r.lo>=12?75:90; }
+function rirTxt(x, d){
+  const w=planWeek(d), ph=phase(w);
+  if(ph.deload) return "Leichte Woche: 3 bis 4 Wdh. Reserve lassen, Gewicht gleich, nur weniger Sätze.";
+  if(w<=2) return "Einstieg: 2 bis 3 Wdh. Reserve lassen und die Technik sauber lernen.";
+  return isCompound(x) ? "Anstrengung: 1 bis 2 Wdh. Reserve, sauber bleiben. Runter 2 bis 3 Sek. kontrolliert." : "Anstrengung: letzter Satz bis 0 bis 1 Wdh. vor Schluss. Langsam runter, Muskel spüren.";
+}
+const TRAIN_RULES=[
+  ["🎯","Nah ans Limit","Jeder Satz endet 0 bis 3 Wiederholungen vor dem Punkt, an dem nichts mehr geht. Grundübungen eher 1 bis 2 Reserve, Isolationsübungen bis 0 bis 1."],
+  ["🔁","Wiederholungen","Für Muskelaufbau funktioniert fast alles zwischen 5 und 30 Wdh., solange es nah ans Limit geht. Praktisch: Grundübungen 6 bis 10, Maschinen und Kabel 8 bis 15, Seitheben und Waden 12 bis 20."],
+  ["📈","Steigern (Doppelprogression)","Erst Wiederholungen hoch bis zum oberen Ende, dann Gewicht rauf (2,5 kg, Beine 5 kg) und wieder unten anfangen. Die App schlägt das bei jeder Übung vor."],
+  ["📊","Sätze pro Woche","Mindestens 10 harte Sätze pro Muskel und Woche, 10 bis 20 sind ideal. Mehr bringt etwas mehr, aber mit abnehmendem Nutzen. Wichtig: jeden Muskel mindestens 2 Mal pro Woche."],
+  ["⏱️","Pausen","Grundübungen 2 bis 3 Min., Isolationsübungen 60 bis 90 Sek. Unter 60 Sek. bremst das Wachstum etwas. Die App stellt die Pause je Übung automatisch ein."],
+  ["🔥","Aufwärmen","Vor der ersten schweren Übung 2 Aufwärmsätze: ca. 50 % für 10 und 75 % für 5 Wdh. Danach direkt die Arbeitssätze."],
+  ["🛌","Erholung","Alle 6 bis 8 Wochen eine leichte Woche. Dazu 1,6 bis 2,2 g Eiweiß pro kg Körpergewicht und 7 bis 9 Std. Schlaf, sonst wächst nichts."]
+];
+function renderTrainRules(){
+  if($("rulesCard")) return; const sec=$("p-training"); if(!sec) return;
+  const c=el("div","card"); c.id="rulesCard"; const d=el("details"); const sm=el("summary"); sm.append(document.createTextNode("🏋️ So trainierst du richtig "), el("span","note","nach aktuellem Stand der Forschung")); d.append(sm);
+  const ul=el("div","ruleList"); TRAIN_RULES.forEach(([e,t,x])=>{ const r=el("div","rule"); r.append(el("span","re",e)); const b=el("div"); b.append(el("b",null,t), el("div","note",x)); r.append(b); ul.append(r); }); d.append(ul);
+  d.append(el("div","note","Quellen: ACSM Position Stand Krafttraining 2026, Metaanalysen zu Satzpausen (2024), Trainingsvolumen und Nähe zum Muskelversagen."));
+  c.append(d); sec.append(c);
 }
 
 // ---------- Start
