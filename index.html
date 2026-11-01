@@ -827,6 +827,16 @@ body[data-tab="training"]::before{filter:hue-rotate(140deg)}body[data-tab="essen
 #rulesCard .rule{display:grid;grid-template-columns:30px 1fr;gap:8px;align-items:start}
 #rulesCard .rule .re{font-size:20px;line-height:1.2}
 .syncOpt{padding:12px;border-radius:16px;background:var(--bg);display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.scanmodal video{transform-origin:center;transition:transform .15s ease}
+.scanmodal .scanCtl{display:flex;flex-direction:column;align-items:center;gap:10px;width:min(92vw,420px);margin-bottom:12px}
+.scanmodal .frame{margin:auto 0}
+.scanmodal .scanBtn{border:0;border-radius:999px;padding:12px 20px;font-size:16px;font-weight:800;background:rgba(255,255,255,.16);color:#fff;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.scanmodal .scanBtn.on{background:#FFD54A;color:#111}
+.scanmodal .scanZoom{display:flex;align-items:center;gap:10px;width:100%;background:rgba(0,0,0,.55);padding:8px 12px;border-radius:999px}
+.scanmodal .scanZoom input{flex:1;accent-color:#E8904A}
+.scanmodal .scanZoom .zl{color:#fff;font-weight:800;min-width:38px}
+.scanmodal .scanZoom .zq{display:flex;gap:4px}
+.scanmodal .scanZoom .zq button{border:0;border-radius:999px;background:rgba(255,255,255,.18);color:#fff;font-weight:700;padding:6px 9px}
 
 :root{--mzb:color-mix(in srgb,var(--ink) 9%,var(--panel));--mz0:color-mix(in srgb,var(--ink) 20%,var(--panel))}
 .sheet{z-index:96}.toast{z-index:160}
@@ -1308,7 +1318,7 @@ html.sheetOpen body::before,html.sheetOpen .mascot svg,html.sheetOpen .mascot .b
 </div>
 <div class="sheet" id="sheet" hidden><div class="pane" id="pane"></div></div>
 <div class="toast" id="toast" hidden></div>
-<div class="scanmodal" id="scanModal" hidden><video id="scanVideo" playsinline muted></video><div class="msg">Barcode in den Rahmen halten</div><div class="frame"></div><button class="btn" id="scanCancel">Abbrechen</button></div>
+<div class="scanmodal" id="scanModal" hidden><video id="scanVideo" playsinline muted></video><div class="msg">Barcode in den Rahmen halten</div><div class="frame"></div><div class="scanCtl" id="scanCtl"></div><button class="btn" id="scanCancel">Abbrechen</button></div>
 
 <script src="cap.js"></script>
 <script src="zxing.min.js"></script>
@@ -3286,7 +3296,7 @@ function readCode(){
     scanResolve=resolve; const v=$("scanVideo");
     try{ scanStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}, width:{ideal:1280}, height:{ideal:720}}, audio:false}); }
     catch(e){ toast("Kamera nicht erlaubt. In den Android Einstellungen bei Winterarc die Kamera erlauben"); resolve(null); return; }
-    v.srcObject=scanStream; $("scanModal").hidden=false; scanning=true; try{ await v.play(); }catch(e){}
+    v.srcObject=scanStream; $("scanModal").hidden=false; scanning=true; try{ await v.play(); }catch(e){} try{ await scanControls(); }catch(e){}
     let detector=null;
     try{ if("BarcodeDetector" in window){ const f=await window.BarcodeDetector.getSupportedFormats(); if(f.includes("ean_13")) detector=new window.BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","qr_code"]}); } }catch(e){ detector=null; }
     let reader=null;
@@ -3297,8 +3307,8 @@ function readCode(){
       if(v.readyState>=2 && v.videoWidth){
         let code=null;
         try{
-          if(detector){ const r=await detector.detect(v); if(r && r[0]) code=r[0].rawValue; }
-          else if(reader){ const vw=v.videoWidth, vh=v.videoHeight, cw=Math.round(vw*0.8), ch=Math.round(vh*0.5); cv.width=cw; cv.height=ch; ctx.drawImage(v,(vw-cw)/2,(vh-ch)/2,cw,ch,0,0,cw,ch); const Z=window.ZXing; code=reader.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(cv)))).getText(); }
+          if(detector){ let src=v; if(v.style.transform && scanZoom>1){ const vw=v.videoWidth, vh=v.videoHeight, cw=Math.round(vw/scanZoom), ch=Math.round(vh/scanZoom); cv.width=cw; cv.height=ch; ctx.drawImage(v,(vw-cw)/2,(vh-ch)/2,cw,ch,0,0,cw,ch); src=cv; } const r=await detector.detect(src); if(r && r[0]) code=r[0].rawValue; }
+          else if(reader){ const vw=v.videoWidth, vh=v.videoHeight, zf=(v.style.transform&&scanZoom>1)?scanZoom:1, cw=Math.round(vw*0.8/zf), ch=Math.round(vh*0.5/zf); cv.width=cw; cv.height=ch; ctx.drawImage(v,(vw-cw)/2,(vh-ch)/2,cw,ch,0,0,cw,ch); const Z=window.ZXing; code=reader.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(cv)))).getText(); }
         }catch(e){}
         if(code){ stopCamera(); try{ navigator.vibrate && navigator.vibrate(60); }catch(e){} resolve(code); return; }
       }
@@ -5880,6 +5890,31 @@ function cloudDecide(data){
     box("📱 Dieses Gerät", L, lu, "", "Diesen Stand hochladen", ()=>{ cloudAsk=false; closeSheet(); state.updatedAt=Date.now(); cloudReady=true; cloudUpload(true); toast("Dieser Stand ist jetzt in der Cloud"); }, !cloudNewer);
     p.append(el("div","note","Tipp: Der Stand mit mehr Einträgen und dem neueren Datum ist meistens der richtige."));
   }, "sync");
+}
+
+
+// v2.0.79: Scanner mit Licht (Taschenlampe) und Zoom
+let scanZoom=1, scanTorch=false;
+async function scanControls(){
+  const bar=$("scanCtl"); if(!bar) return; bar.innerHTML=""; scanZoom=1; scanTorch=false;
+  const v=$("scanVideo"); v.style.transform=""; const tr=scanStream && scanStream.getVideoTracks && scanStream.getVideoTracks()[0]; if(!tr) return;
+  let caps={}; try{ caps=tr.getCapabilities ? tr.getCapabilities() : {}; }catch(e){}
+  try{ if(caps.focusMode && caps.focusMode.includes("continuous")) await tr.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
+  // Licht
+  if(caps.torch){ const tb=el("button","scanBtn","🔦 Licht an"); tb.onclick=async()=>{ scanTorch=!scanTorch; try{ await tr.applyConstraints({advanced:[{torch:scanTorch}]}); tb.textContent=scanTorch?"🔦 Licht aus":"🔦 Licht an"; tb.classList.toggle("on",scanTorch); }catch(e){ toast("Licht geht bei dieser Kamera nicht"); } }; bar.append(tb); }
+  // Zoom: echt über die Kamera, sonst digital
+  const hw=caps.zoom && caps.zoom.max>1, zmin=hw?Math.max(1,caps.zoom.min||1):1, zmax=hw?Math.min(caps.zoom.max,8):4;
+  const zb=el("div","scanZoom"); const lab=el("span","zl","1×"); const rg=el("input"); rg.type="range"; rg.min=zmin; rg.max=zmax; rg.step=hw?(caps.zoom.step||0.1):0.1; rg.value=zmin;
+  const setZ=async z=>{ scanZoom=Math.max(zmin,Math.min(zmax,z)); rg.value=scanZoom; lab.textContent=(Math.round(scanZoom*10)/10).toString().replace(".",",")+"×";
+    if(hw){ try{ await tr.applyConstraints({advanced:[{zoom:scanZoom}]}); }catch(e){} } else v.style.transform="scale("+scanZoom+")"; };
+  rg.oninput=()=>setZ(+rg.value);
+  const q=el("div","zq"); [1,2,3].filter(z=>z<=zmax).forEach(z=>{ const b=el("button",null,z+"×"); b.onclick=()=>setZ(z); q.append(b); });
+  zb.append(lab, rg, q); bar.append(zb);
+  // Mit zwei Fingern zoomen
+  let d0=0, z0=1; const md=$("scanModal");
+  md.ontouchstart=e=>{ if(e.touches.length===2){ d0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); z0=scanZoom; } };
+  md.ontouchmove=e=>{ if(e.touches.length===2 && d0){ const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); setZ(z0*d/d0); e.preventDefault(); } };
+  md.ontouchend=()=>{ d0=0; };
 }
 
 // ---------- Start
