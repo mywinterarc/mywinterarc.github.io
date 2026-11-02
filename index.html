@@ -2971,7 +2971,10 @@ function renderLog(k){
 
 // ---------- Unterwegs: Fast Food und Snacks (Werte ca., je Portion)
 const FASTFOOD = [
-  ["Kantine","Bockwurst mit Brötchen und Senf",440,17,33,25],["Kantine","2 Bockwürste mit Brötchen und Senf",710,29,34,49],["Kantine","Rostbratwurst im Brötchen mit Senf",480,19,33,30],["Kantine","Leberkäse im Brötchen",560,23,33,37],
+  ["Kantine","Bockwurst mit Brötchen und Senf",440,17,33,25],
+  ["Kantine","Halbes Brötchen Eiersalat",190,6.5,17,10.5],["Kantine","Halbes Brötchen Kochschinken",110,7.5,15.5,1.5],["Kantine","Halbes Brötchen roher Schinken",130,8,15.5,3.5],["Kantine","Halbes Brötchen Salami",155,6.5,15.5,7],
+  ["Kantine","Halbes Brötchen Käse",170,8.5,15.5,7.5],["Kantine","Halbes Brötchen Schinken und Käse",180,12.5,15.5,6.5],["Kantine","Halbes Brötchen Mett mit Zwiebeln",180,10.5,16,8],["Kantine","Halbes Brötchen Putenbrust",105,7.5,15.5,1],
+  ["Kantine","Halbes Brötchen Thunfisch",140,10.5,15.5,3.5],["Kantine","Halbes Brötchen Leberwurst",160,5.5,15.5,7.5],["Kantine","Halbes Brötchen Fleischsalat",200,5.5,17.5,11.5],["Kantine","Halbes Brötchen Lachs und Frischkäse",145,7.5,16,5],["Kantine","2 Bockwürste mit Brötchen und Senf",710,29,34,49],["Kantine","Rostbratwurst im Brötchen mit Senf",480,19,33,30],["Kantine","Leberkäse im Brötchen",560,23,33,37],
   ["Kantine","Schnitzel Brötchen",520,28,50,22],["Kantine","Frikadelle im Brötchen",450,20,40,22],["Kantine","Bockwurst mit Kartoffelsalat",650,17,40,45],["Kantine","Currywurst mit Pommes",850,25,80,48],
   ["Kantine","Schnitzel mit Pommes",900,40,85,45],["Kantine","Hähnchenbrust mit Reis und Gemüse",600,45,70,15],["Kantine","Nudeln Bolognese",750,30,95,25],["Kantine","Gulasch mit Kartoffeln oder Klößen",700,40,65,28],
   ["Kantine","Rouladen mit Klößen und Rotkohl",850,40,75,40],["Kantine","Salat mit Hähnchen",400,35,15,20],["Kantine","Eintopf mit Wurst",550,25,45,28],["Kantine","Pudding oder Quarkspeise Dessert",180,5,28,5],
@@ -5332,6 +5335,8 @@ function ffInfo(i){ const n=(i.n||"").toLowerCase(), ch=i.ch, big=/30 cm/.test(n
   let desc="Ca. Werte je Portion, so wie die Kette es verkauft.";
   if(/bockwurst|bratwurst|leberkäse|frikadelle|schnitzel brötchen/.test(n) && /brötchen/.test(n)){ desc="Brötchen (ca. 60 g) mit "+i.n.replace(/ (mit|im) Brötchen.*$/,"").replace(/^\d+ /,"")+(/senf/.test(n)?" und Senf":"")+".";
     M.push(["Ohne Brötchen",-160,-5,-31,-1],["+ Zweites Brötchen",160,5,31,1],["+ Ketchup",30,0,7,0],["+ Kartoffelsalat 150 g",220,3,18,15]); if(/bockwurst|bratwurst/.test(n)) M.push(["+ Zweite Wurst",270,12,1,24]); }
+  else if(/^halbes brötchen/.test(n)){ desc="Halbes Brötchen (ca. 30 g), belegt wie in der Kantine, ohne Butter gerechnet.";
+    M.push(["+ Zweite Hälfte gleich belegt",i.kcal,i.p,i.c,i.f],["+ Butter oder Margarine",36,0,0,4],["+ Ei oder Gurke als Deko",15,1,0,1],["Doppelt belegt",Math.round(i.kcal-80),Math.round((i.p-2.5)*10)/10,Math.round((i.c-15.5)*10)/10,Math.round((i.f-0.5)*10)/10]); }
   else if(/brötchen|brezel/.test(n)){ desc="Brötchen (ca. 60 g), belegt wie beim Bäcker, ohne Butter gerechnet. Butter unten dazunehmen.";
     M.push(["+ Butter oder Margarine",60,0,0,6.5],["Doppelt belegt",/käse/.test(n)?110:/schinken/.test(n)?70:120,/käse/.test(n)?8:/schinken/.test(n)?9:6,1,/schinken/.test(n)?3:9],["Halbes Brötchen",-150,-5,-16,-5]); }
   else if(ch==="Kantine"){ desc="Ca. Werte für eine normale Kantinen Portion. Nachschlag oder halbe Portion unten wählen.";
