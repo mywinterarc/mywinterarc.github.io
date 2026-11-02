@@ -2374,7 +2374,7 @@ function openFoodItem(k, f, ed){
 
 // ---------- Essen Symbole
 const FOOD_EMO=[[/porridge|oats|hafer|müsli/i,"🥣"],[/bolognese|lasagne|nudel|pasta|carbonara|spaghetti/i,"🍝"],[/chili/i,"🌶️"],[/paella/i,"🥘"],[/spätzle/i,"🧀"],[/seelachs|fisch/i,"🐟"],[/kartoffel/i,"🥔"],[/teriyaki|curry|reis/i,"🍛"],[/gyros|döner|dürüm|lahmacun/i,"🥙"],[/burger|whopper|big mac|mcchicken|royal|cheeseburger|hamburger/i,"🍔"],[/pizza/i,"🍕"],[/wrap|twister/i,"🌯"],[/paprika|pfanne/i,"🥘"],[/pfannkuchen/i,"🥞"],[/kuchen/i,"🍰"],[/waffel/i,"🧇"],[/quark|skyr|pudding/i,"🥛"],[/shake|whey|drink/i,"🥤"],[/obst|banane|schoki|snack/i,"🍌"],[/frei/i,"🎉"],[/nugget|chicken|hähnchen|wings|original recipe|zinger/i,"🍗"],[/brötchen|brezel|sandwich|teriyaki 15|turkey|steak/i,"🥪"],[/pommes/i,"🍟"],[/jerky/i,"🥩"],[/riegel/i,"🍫"],[/salat|bowl/i,"🥗"],[/ei\b|eier/i,"🥚"]];
-const CHAIN_EMO={"McDonald's":"🍔","Burger King":"👑","KFC":"🍗","Subway":"🥪","Döner":"🥙","Bäcker":"🥨","Supermarkt":"🛒","Tankstelle":"⛽"};
+const CHAIN_EMO={"Kantine":"🍽️","McDonald's":"🍔","Burger King":"👑","KFC":"🍗","Subway":"🥪","Döner":"🥙","Bäcker":"🥨","Supermarkt":"🛒","Tankstelle":"⛽"};
 function foodEmoji(n){ const m=FOOD_EMO.find(([r])=>r.test(n||"")); return m?m[1]:"🍽️"; }
 
 // ---------- Training
@@ -2971,6 +2971,10 @@ function renderLog(k){
 
 // ---------- Unterwegs: Fast Food und Snacks (Werte ca., je Portion)
 const FASTFOOD = [
+  ["Kantine","Bockwurst mit Brötchen und Senf",440,17,33,25],["Kantine","2 Bockwürste mit Brötchen und Senf",710,29,34,49],["Kantine","Rostbratwurst im Brötchen mit Senf",480,19,33,30],["Kantine","Leberkäse im Brötchen",560,23,33,37],
+  ["Kantine","Schnitzel Brötchen",520,28,50,22],["Kantine","Frikadelle im Brötchen",450,20,40,22],["Kantine","Bockwurst mit Kartoffelsalat",650,17,40,45],["Kantine","Currywurst mit Pommes",850,25,80,48],
+  ["Kantine","Schnitzel mit Pommes",900,40,85,45],["Kantine","Hähnchenbrust mit Reis und Gemüse",600,45,70,15],["Kantine","Nudeln Bolognese",750,30,95,25],["Kantine","Gulasch mit Kartoffeln oder Klößen",700,40,65,28],
+  ["Kantine","Rouladen mit Klößen und Rotkohl",850,40,75,40],["Kantine","Salat mit Hähnchen",400,35,15,20],["Kantine","Eintopf mit Wurst",550,25,45,28],["Kantine","Pudding oder Quarkspeise Dessert",180,5,28,5],
   ["McDonald's","Hamburger",259,13,31,9],["McDonald's","Cheeseburger",307,16,31,13],["McDonald's","Double Cheeseburger",460,27,32,24],
   ["McDonald's","6 Chicken McNuggets + Süßsauer",316,15,27,15],["McDonald's","9 Chicken McNuggets",401,23,26,23],["McDonald's","Chickenburger",293,12,35,11],
   ["McDonald's","McChicken Classic",451,18,45,21],["McDonald's","Big Mac",545,27,44,28],["McDonald's","Hamburger Royal TS",536,30,38,29],["McDonald's","Pommes klein",231,3,29,11],
@@ -2979,10 +2983,13 @@ const FASTFOOD = [
   ["Subway","Chicken Teriyaki 15 cm",330,26,44,4],["Subway","Turkey 15 cm",280,19,42,4],["Subway","Steak und Cheese 15 cm",360,25,42,10],["Subway","Chicken Teriyaki 30 cm",660,52,88,8],
   ["Döner","Dürüm Hähnchen",650,42,60,25],["Döner","Dönerteller Hähnchen mit Salat, ohne Pommes",550,50,20,30],["Döner","Döner im Brot",700,35,70,30],["Döner","Lahmacun mit Salat",400,18,55,12],
   ["Bäcker","Putenbrust Brötchen",300,18,40,6],["Bäcker","Käsebrötchen",330,15,40,12],["Bäcker","Laugenbrezel",220,6,44,2],["Bäcker","Mettbrötchen",360,18,30,18],
+  ["Bäcker","Eiersalat Brötchen",380,12,32,22],["Bäcker","Kochschinken Brötchen",280,15,32,9],["Bäcker","Roher Schinken Brötchen",300,15,31,12],["Bäcker","Salami Brötchen",360,14,31,19],
+  ["Bäcker","Schinken Käse Brötchen",360,20,32,16],["Bäcker","Thunfisch Brötchen",330,18,32,13],["Bäcker","Leberwurst Brötchen",340,11,31,19],["Bäcker","Fleischsalat Brötchen",400,10,32,26],
+  ["Bäcker","Lachs Brötchen mit Frischkäse",340,16,31,16],["Bäcker","Hähnchen Brötchen mit Salat",330,20,34,11],["Bäcker","Körnerbrötchen mit Käse",370,16,36,17],["Bäcker","Butterbrezel",300,6,44,11],
   ["Supermarkt","Skyr 450 g",290,50,18,1],["Supermarkt","Magerquark 250 g + Banane",275,31,37,1],["Supermarkt","Protein Pudding",150,20,12,2],["Supermarkt","Hähnchen Aufschnitt 100 g + Brötchen",290,26,36,4],["Supermarkt","Protein Drink 330 ml",200,25,15,4],
   ["Tankstelle","Beef Jerky 50 g",130,22,6,2],["Tankstelle","Protein Riegel",200,20,18,7],["Tankstelle","Belegtes Sandwich Huhn",350,20,38,12]
 ];
-const FF_TIPS = {"McDonald's":"Cola Zero statt Cola, Pommes weglassen oder klein, Süßsauer statt Mayo.","Burger King":"Ohne Mayo bestellen spart 100 kcal, Getränk zero.","KFC":"Lieber Original Stücke statt panierter Burger, Krautsalat statt Pommes.","Subway":"Doppelt Fleisch geht für mehr Eiweiß, Sauce: Sweet Onion oder Senf, kein Käse.","Döner":"Teller mit Salat und ohne Pommes, Sauce extra und nur die Hälfte.","Bäcker":"Belegt mit Pute oder Ei, kein Croissant.","Supermarkt":"Skyr und Quark sind die Eiweiß Retter für unterwegs.","Tankstelle":"Jerky und Riegel als Notlösung, Getränk zero."};
+const FF_TIPS = {"Kantine":"Am meisten Eiweiß für die kcal: Fleisch oder Fisch mit Gemüse und einer normalen Beilage. Soße und Frittiertes klein halten, Bockwurst ist ok, aber eher Fett als Eiweiß.","McDonald's":"Cola Zero statt Cola, Pommes weglassen oder klein, Süßsauer statt Mayo.","Burger King":"Ohne Mayo bestellen spart 100 kcal, Getränk zero.","KFC":"Lieber Original Stücke statt panierter Burger, Krautsalat statt Pommes.","Subway":"Doppelt Fleisch geht für mehr Eiweiß, Sauce: Sweet Onion oder Senf, kein Käse.","Döner":"Teller mit Salat und ohne Pommes, Sauce extra und nur die Hälfte.","Bäcker":"Belegt mit Pute oder Ei, kein Croissant.","Supermarkt":"Skyr und Quark sind die Eiweiß Retter für unterwegs.","Tankstelle":"Jerky und Riegel als Notlösung, Getränk zero."};
 function openOut(k){
   const list=dayFood(k), T={kcal:0,p:0}; list.forEach(f=>{ T.kcal+=f.kcal||0; T.p+=f.p||0; });
   const leftK=Math.max(0,(P().kcal||2400)-T.kcal), leftP=Math.max(0,(P().p||150)-T.p);
@@ -5323,7 +5330,13 @@ document.addEventListener("click",e=>{ const t=e.target.closest && e.target.clos
 // Unterwegs: was drin ist, abwählen, nur einen Teil gegessen
 function ffInfo(i){ const n=(i.n||"").toLowerCase(), ch=i.ch, big=/30 cm/.test(n)?2:1, M=[];
   let desc="Ca. Werte je Portion, so wie die Kette es verkauft.";
-  if(ch==="Subway"){ const fill=i.n.replace(/ (15|30) cm/,""); desc=(big===2?"30":"15")+" cm Brot (Italian oder Vollkorn), "+fill+", Salat, Tomate, Gurke, Zwiebeln, Paprika. Werte mit Soße light.";
+  if(/bockwurst|bratwurst|leberkäse|frikadelle|schnitzel brötchen/.test(n) && /brötchen/.test(n)){ desc="Brötchen (ca. 60 g) mit "+i.n.replace(/ (mit|im) Brötchen.*$/,"").replace(/^\d+ /,"")+(/senf/.test(n)?" und Senf":"")+".";
+    M.push(["Ohne Brötchen",-160,-5,-31,-1],["+ Zweites Brötchen",160,5,31,1],["+ Ketchup",30,0,7,0],["+ Kartoffelsalat 150 g",220,3,18,15]); if(/bockwurst|bratwurst/.test(n)) M.push(["+ Zweite Wurst",270,12,1,24]); }
+  else if(/brötchen|brezel/.test(n)){ desc="Brötchen (ca. 60 g), belegt wie beim Bäcker, ohne Butter gerechnet. Butter unten dazunehmen.";
+    M.push(["+ Butter oder Margarine",60,0,0,6.5],["Doppelt belegt",/käse/.test(n)?110:/schinken/.test(n)?70:120,/käse/.test(n)?8:/schinken/.test(n)?9:6,1,/schinken/.test(n)?3:9],["Halbes Brötchen",-150,-5,-16,-5]); }
+  else if(ch==="Kantine"){ desc="Ca. Werte für eine normale Kantinen Portion. Nachschlag oder halbe Portion unten wählen.";
+    M.push(["Halbe Beilage",-150,-3,-30,-3],["Soße extra",90,1,6,7],["+ Salat vom Buffet mit Dressing",120,2,8,9],["+ Dessert",180,5,28,5]); }
+  else if(ch==="Subway"){ const fill=i.n.replace(/ (15|30) cm/,""); desc=(big===2?"30":"15")+" cm Brot (Italian oder Vollkorn), "+fill+", Salat, Tomate, Gurke, Zwiebeln, Paprika. Werte mit Soße light.";
     M.push(["Ohne Käse",-45,-3,0,-3.5],["Ohne Soße",-40,0,-6,-1.5],["Mayo oder Chipotle statt light",90,0,1,10],["Doppelt Käse",45,3,0,3.5],["Extra Fleisch",70,12,1,2],["Als Wrap statt Brot",60,2,8,3]); M.forEach(m=>{ for(let x=1;x<5;x++) m[x]*=big; }); }
   else if(/burger|whopper|big mac|mac|royal|zinger|long chicken/.test(n)){ const cheese=/cheese|royal ts|big mac/.test(n); desc="Brötchen, "+(/chicken|zinger/.test(n)?"Hähnchen paniert":"Rindfleisch Patty")+(cheese?", Käse":"")+", Soße, Salat oder Gurke und Zwiebeln.";
     M.push(["Ohne Soße oder Mayo",-70,0,-2,-7]); if(cheese) M.push(["Ohne Käse",-50,-3,0,-4]); M.push(["Extra Patty",200,15,0,15],["Ohne Brötchen",-200,-6,-38,-3],["+ Pommes klein",230,3,29,11],["+ Getränk mit Zucker 0,5 l",210,0,53,0]); }
