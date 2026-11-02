@@ -3243,7 +3243,7 @@ const PMM=[["Paella",490,40,45,15],["Chicken Teriyaki",474,43,55,8],["Butter Chi
   ["Seelachs, Reis und Gemüse",395,32,36,13],["Protein Pasta mit Frischkäsesauce",590,32,70,19],["Chicken Bowl Thai",330,50,13,7],["Süßkartoffel Hähnchen Bowl",405,41,36,9],["Noodles Asian Style",510,48,48,12],
   ["Chili con Carne",600,35,55,23],["Asia Nudeln in Erdnusssauce",570,43,42,24],["Gebratener Reis in Erdnusssauce",585,43,55,21]];
 const pmmItem = ([n,kcal,p,c,f]) => ({n:"PMM "+n+" (½ Tüte)", kcal, p, c, f});
-const BASIC_FOODS=[
+const BASIC_FOODS0=[
  ["Skyr natur","Eigenmarke",63,11,4,0.2],["Magerquark","Eigenmarke",67,12,4,0.2],["Speisequark 20 %","Eigenmarke",109,12,3.5,5],["Hüttenkäse","Eigenmarke",98,12.5,2.5,4.5],["Griechischer Joghurt 10 %","Eigenmarke",120,4,4,10],["Naturjoghurt 1,5 %","Eigenmarke",47,4,5,1.5],["High Protein Pudding","Ehrmann, Milbona",75,10,6,1.5],["Protein Joghurt","Milbona, Ehrmann",61,10,4,0.2],
  ["Milch 1,5 %","Eigenmarke",47,3.4,4.9,1.5],["Milch 3,5 %","Eigenmarke",64,3.3,4.8,3.5],["Haferdrink","Eigenmarke",45,0.5,7,1.5],["Eier (Stück ca. 60 g)","",142,12.6,0.7,9.8],["Gouda jung","Eigenmarke",356,24,0,29],["Gouda light 16 %","Eigenmarke",260,30,0,16],["Mozzarella light","Eigenmarke",165,19,1,9],["Mozzarella","Eigenmarke",250,18,1,19],["Feta","Eigenmarke",270,16,0.5,22.5],["Frischkäse light","Eigenmarke",145,7,4,11],["Reibekäse light","Eigenmarke",280,30,0,17],
  ["Hähnchenbrustfilet roh","Eigenmarke",105,23.5,0,1.2],["Hähnchenschenkel ohne Haut roh","",120,20,0,4],["Putenbrust roh","Eigenmarke",107,24,0,1],["Rinderhack 5 % roh","Eigenmarke",125,21,0,5],["Rinderhack 10 % roh","",165,20,0,10],["Gemischtes Hack roh","Eigenmarke",250,18,0,20],["Schweineschnitzel roh","",110,22.5,0,2],["Lachs","",208,20,0,13],["Hähnchenbrust Aufschnitt","Eigenmarke",105,20,1.5,2],["Kochschinken","Eigenmarke",115,19,1,4],["Salami","Eigenmarke",400,22,1,34],["Leberkäse","",280,12,1,25],["Wiener Würstchen","Eigenmarke",250,13,1,22],["Gyros Pfanne roh","Eigenmarke",160,19,1,9],
@@ -3254,6 +3254,7 @@ const BASIC_FOODS=[
  ["Burger Patty Rind roh","",230,18,0,17],["Cheeseburger (TK, Stück ca. 130 g)","",260,13,26,11],["Burger Brötchen","",270,9,48,4.5],["Hamburger McDonald's (Stück 104 g)","McDonald's",249,12.5,29.8,8.7],["Pizza Margherita TK","",230,9,30,8],["Döner im Brot","",200,10,20,9],["Pommes frites","",290,3.4,36,15],["Chicken Nuggets","",270,15,17,16],["Lasagne TK","",130,6,12,6],["Fischstäbchen","",200,12,18,9],
  ["Cola","",42,0,10.6,0],["Cola Zero","",0.3,0,0,0],["Monster Energy","",47,0,12,0],["Monster Ultra","",1,0,0.9,0],["Orangensaft","",43,0.7,9,0.1],["Apfelschorle","",24,0,5.5,0]
 ].map(([n,brand,k,p,c,f])=>({n, brand:brand||"Basis", k100:k, p100:p, c100:c, f100:f, basic:true})).concat(PMM.map(([n,k,p,c,f])=>({n:n+" TK", brand:"Prep My Meal", k100:Math.round(k/5), p100:Math.round(p/5*10)/10, c100:Math.round(c/5*10)/10, f100:Math.round(f/5*10)/10, serving:500, basic:true})));
+const BASIC_FOODS=BASIC_FOODS0.concat(instickFoods());
 const OFF_FIELDS="code,product_name,product_name_de,brands,nutriments,serving_quantity";
 async function getJSON(url, ms){
   // In der App über die native Verbindung laden (keine Browser Sperren), sonst normal per fetch
@@ -3294,8 +3295,10 @@ function stopCamera(){ scanning=false; $("scanModal").hidden=true; try{ if(scanS
 function readCode(){
   return new Promise(async (resolve)=>{
     scanResolve=resolve; const v=$("scanVideo");
-    try{ scanStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}, width:{ideal:1280}, height:{ideal:720}}, audio:false}); }
-    catch(e){ toast("Kamera nicht erlaubt. In den Android Einstellungen bei Winterarc die Kamera erlauben"); resolve(null); return; }
+    let camId=null; try{ camId=localStorage.getItem("wa_cam"); }catch(e){}
+    try{ scanStream = await navigator.mediaDevices.getUserMedia({video: camId ? {deviceId:{exact:camId}, width:{ideal:1280}, height:{ideal:720}} : {facingMode:{ideal:"environment"}, width:{ideal:1280}, height:{ideal:720}}, audio:false}); }
+    catch(e0){ try{ scanStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}, width:{ideal:1280}, height:{ideal:720}}, audio:false}); }
+    catch(e){ toast("Kamera nicht erlaubt. In den Android Einstellungen bei Winterarc die Kamera erlauben"); resolve(null); return; } }
     v.srcObject=scanStream; $("scanModal").hidden=false; scanning=true; try{ await v.play(); }catch(e){} try{ await scanControls(); }catch(e){}
     let detector=null;
     try{ if("BarcodeDetector" in window){ const f=await window.BarcodeDetector.getSupportedFormats(); if(f.includes("ean_13")) detector=new window.BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","qr_code"]}); } }catch(e){ detector=null; }
@@ -5901,20 +5904,44 @@ async function scanControls(){
   let caps={}; try{ caps=tr.getCapabilities ? tr.getCapabilities() : {}; }catch(e){}
   try{ if(caps.focusMode && caps.focusMode.includes("continuous")) await tr.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
   // Licht
-  if(caps.torch){ const tb=el("button","scanBtn","🔦 Licht an"); tb.onclick=async()=>{ scanTorch=!scanTorch; try{ await tr.applyConstraints({advanced:[{torch:scanTorch}]}); tb.textContent=scanTorch?"🔦 Licht aus":"🔦 Licht an"; tb.classList.toggle("on",scanTorch); }catch(e){ toast("Licht geht bei dieser Kamera nicht"); } }; bar.append(tb); }
+  const row=el("div","scanRow"); bar.append(row);
+  if(caps.torch){ const tb=el("button","scanBtn","🔦 Licht an"); tb.onclick=async()=>{ scanTorch=!scanTorch; try{ await tr.applyConstraints({advanced:[{torch:scanTorch}]}); tb.textContent=scanTorch?"🔦 Licht aus":"🔦 Licht an"; tb.classList.toggle("on",scanTorch); }catch(e){ toast("Licht geht bei dieser Kamera nicht"); } }; row.append(tb); }
+  try{ await scanCamButton(bar); }catch(e){}
   // Zoom: echt über die Kamera, sonst digital
-  const hw=caps.zoom && caps.zoom.max>1, zmin=hw?Math.max(1,caps.zoom.min||1):1, zmax=hw?Math.min(caps.zoom.max,8):4;
+  const hw=caps.zoom && caps.zoom.max>1, zmin=hw?Math.max(0.5,caps.zoom.min||1):1, zmax=hw?Math.min(caps.zoom.max,8):4;
   const zb=el("div","scanZoom"); const lab=el("span","zl","1×"); const rg=el("input"); rg.type="range"; rg.min=zmin; rg.max=zmax; rg.step=hw?(caps.zoom.step||0.1):0.1; rg.value=zmin;
   const setZ=async z=>{ scanZoom=Math.max(zmin,Math.min(zmax,z)); rg.value=scanZoom; lab.textContent=(Math.round(scanZoom*10)/10).toString().replace(".",",")+"×";
     if(hw){ try{ await tr.applyConstraints({advanced:[{zoom:scanZoom}]}); }catch(e){} } else v.style.transform="scale("+scanZoom+")"; };
   rg.oninput=()=>setZ(+rg.value);
-  const q=el("div","zq"); [1,2,3].filter(z=>z<=zmax).forEach(z=>{ const b=el("button",null,z+"×"); b.onclick=()=>setZ(z); q.append(b); });
+  const q=el("div","zq"); (zmin<1?[zmin,1,2,3]:[1,2,3]).filter(z=>z<=zmax).forEach(z=>{ const b=el("button",null,String(Math.round(z*10)/10).replace(".",",")+"×"); b.onclick=()=>setZ(z); q.append(b); });
   zb.append(lab, rg, q); bar.append(zb);
   // Mit zwei Fingern zoomen
   let d0=0, z0=1; const md=$("scanModal");
   md.ontouchstart=e=>{ if(e.touches.length===2){ d0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); z0=scanZoom; } };
   md.ontouchmove=e=>{ if(e.touches.length===2 && d0){ const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); setZ(z0*d/d0); e.preventDefault(); } };
   md.ontouchend=()=>{ d0=0; };
+}
+
+
+// v2.0.80: Instick Sorten (zubereitet je 100 ml, 1 Stick in 0,5 l), Scanner Kamera wechseln (Weitwinkel)
+function instickFoods(){ const INSTICK=["Wassermelone","Kirsche","Himbeere","Cola","Pfirsich","Waldmeister","Zitrone","Grüner Apfel","Mango","Erdbeere","Tropical","Orange","Pfirsich Maracuja","Waldfrucht","Ananas","Granatapfel","Eistee Pfirsich","Eistee Zitrone","Grüner Eistee Mango Maracuja","Grüner Eistee Limette Minze","Schwarzer Tee Himbeere Limette","Energy Original","Energy Cola Orange","Vanille","Karamell","Schoko","Banane","Pistazie","Eiskaffee"];
+const INSTICK_MILK=new Set(["Vanille","Karamell","Schoko","Banane","Pistazie","Eiskaffee"]);
+  return INSTICK.map(s=>({n:"Instick "+s+" (zubereitet, 1 Stick auf 0,5 l"+(INSTICK_MILK.has(s)?", Milch extra eintragen":"")+")", brand:"Instick", k100:1, p100:0, c100:0.1, f100:0, sug100:0, fib100:0, serving:500, basic:true})); }
+// Kamera wechseln, z. B. auf Weitwinkel oder Makro
+let scanCams=null;
+async function scanCamList(){ try{ const ds=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="videoinput"); const back=ds.filter(d=>/back|rück|rear|environment|hinten/i.test(d.label)); return (back.length?back:ds); }catch(e){ return []; } }
+async function scanSwitchTo(dev){
+  const v=$("scanVideo"); try{ scanStream && scanStream.getTracks().forEach(t=>t.stop()); }catch(e){}
+  scanStream = await navigator.mediaDevices.getUserMedia({video:{deviceId:{exact:dev.deviceId}, width:{ideal:1280}, height:{ideal:720}}, audio:false});
+  v.srcObject=scanStream; try{ await v.play(); }catch(e){} try{ localStorage.setItem("wa_cam", dev.deviceId); }catch(e){}
+  await scanControls();
+}
+async function scanCamButton(bar){
+  scanCams = await scanCamList(); if(!scanCams || scanCams.length<2) return;
+  const tr=scanStream.getVideoTracks()[0], cur=(tr.getSettings&&tr.getSettings().deviceId)||""; let i=Math.max(0,scanCams.findIndex(d=>d.deviceId===cur));
+  const b=el("button","scanBtn","📷 Kamera "+(i+1)+" von "+scanCams.length); b.title="Andere Kamera, z. B. Weitwinkel";
+  b.onclick=async()=>{ i=(i+1)%scanCams.length; b.textContent="📷 …"; try{ await scanSwitchTo(scanCams[i]); }catch(e){ toast("Diese Kamera lässt sich nicht öffnen"); } };
+  let row=bar.querySelector(".scanRow"); if(!row){ row=el("div","scanRow"); bar.prepend(row); } row.append(b);
 }
 
 // ---------- Start
