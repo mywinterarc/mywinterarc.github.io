@@ -843,6 +843,14 @@ body[data-tab="training"]::before{filter:hue-rotate(140deg)}body[data-tab="essen
 .ff .ffb{font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:middle}
 .ff .ffb.good{background:color-mix(in srgb,var(--done) 18%,transparent);color:var(--done)}
 .ff .ffb.bad{background:color-mix(in srgb,#F0566A 16%,transparent);color:#F0566A}
+.avb{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;white-space:nowrap}
+.avb.no{background:color-mix(in srgb,#F0A040 18%,transparent);color:#E08A2A}
+.avb.allergy{background:color-mix(in srgb,#F0566A 18%,transparent);color:#F0566A}
+.qtile.avoided{opacity:.55}
+.qtile .avb{margin:2px 0 0;font-size:10px}
+.avoidBox{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.avoidChips button.av.no{background:color-mix(in srgb,#F0A040 22%,var(--bg));color:var(--ink)}
+.avoidChips button.av.allergy{background:color-mix(in srgb,#F0566A 26%,var(--bg));color:var(--ink)}
 
 :root{--mzb:color-mix(in srgb,var(--ink) 9%,var(--panel));--mz0:color-mix(in srgb,var(--ink) 20%,var(--panel))}
 .sheet{z-index:96}.toast{z-index:160}
@@ -2352,6 +2360,7 @@ function openFoodItem(k, f, ed){
       if(rows){
         ingBox.append(el("div","cat",isPot?"Drin im ganzen Topf, Mengen änderbar":unitR?"Drin in 1 "+unitR+", Mengen änderbar":"Drin für 1 Portion, Mengen änderbar"));
         rows.forEach((x,i)=>{ const r=el("div","ingrow"); const nm=el("span","ingn",x.n); r.append(nm);
+          { const ah=avoidHits(x.n); if(ah.length){ const ab=avoidBadge(ah); if(ab) nm.append(ab); } }
           if(ALT[x.n] && (x.u==="g"||x.u==="ml")){ const ab=el("button","altBtn","⇄ Nicht da? Alternative"); nm.append(ab); ab.addEventListener("click",()=>{ const ex=r.nextSibling; if(ex && ex.classList && ex.classList.contains("altBox")){ ex.remove(); return; } const bx=el("div","altBox"); ALT[x.n].forEach(([to,bs])=>{ const na=altAmount(x.n,to,num(x.a)||0,bs); const b=el("button",null,to+" "+de(na)+" "+x.u); b.addEventListener("click",()=>{ x.n=to; x.a=na; mode="custom"; draw(); toast("Getauscht: "+to+(bs==="p"?", gleich viel Eiweiß":bs==="kcal"?", gleich viele Kalorien":"")); }); bx.append(b); }); r.after(bx); }); }
           const inp=el("input","num"); inp.type="number"; inp.inputMode="decimal"; inp.step="any"; inp.value=x.a; inp.addEventListener("input",()=>{ x.a=inp.value; mode="custom"; bB.setAttribute("aria-pressed","false"); bL.setAttribute("aria-pressed","false"); drawTot(); });
           const u=el("span","ingu",x.u); const del=el("button","x","×"); del.setAttribute("aria-label",x.n+" entfernen"); del.addEventListener("click",()=>{ x.a=0; inp.value=0; mode="custom"; drawTot(); });
@@ -3013,11 +3022,12 @@ function openOut(k){
       box.innerHTML=""; tip.hidden=!chain; if(chain) tip.textContent="Tipp: "+FF_TIPS[chain];
       if((chain==="Kantine"||chain==="Bäcker") && !normTxt(iq.value)) box.append(bestCard(k, chain, leftK, leftP));
       const qf=normTxt(iq.value); const items=FASTFOOD.filter(x=>(!chain||x[0]===chain) && (!qf || normTxt(x[0]+" "+x[1]).includes(qf))).map(x=>({ch:x[0],n:x[1],kcal:x[2],p:x[3],c:x[4],f:x[5]}));
-      items.forEach(i=>{ i.fit=i.kcal<=leftK+50; i.score=(i.fit?1000:0)+i.p/i.kcal*1000; });
+      items.forEach(i=>{ i.fit=i.kcal<=leftK+50; i.av=avoidHits(i.n+" "+((ffInfo(i)||{}).desc||"")); i.score=(i.fit?1000:0)+i.p/i.kcal*1000-(i.av.length?5000:0); });
+      for(let x=items.length-1;x>=0;x--) if(!qf && items[x].av.some(a=>a.lvl==="allergy")) items.splice(x,1);
       items.sort((a,b)=>b.score-a.score);
       let show=items; if(!chain && !qf){ const per={}; show=items.filter(i=>{ per[i.ch]=(per[i.ch]||0)+1; return per[i.ch]<=2; }); }
       show.forEach((i,ix)=>{
-        const r=el("div","ff"+(ix<3&&i.fit?" top":"")); const l=el("div"); const nm=el("div","nm"); nm.append(document.createTextNode(CHAIN_EMO[i.ch]+" "+(chain?"":i.ch+": ")+i.n)); nm.append(el("span","fit "+(i.fit?"ok":"no"), i.fit?"passt":"zu viel")); { const bd=ffBadge(i); if(bd) nm.append(el("span","ffb "+bd[1], bd[0])); } l.append(nm, el("div","macros",macroTxt(i)+" · "+Math.round(i.p/i.kcal*100)+" g Eiweiß je 100 kcal"), el("div","note","Antippen für Details und Anpassen ›")); l.className="l"; l.addEventListener("click",()=>{ closeSheet(); setTimeout(()=>openFFItem(k,i),230); });
+        const r=el("div","ff"+(ix<3&&i.fit?" top":"")); const l=el("div"); const nm=el("div","nm"); nm.append(document.createTextNode(CHAIN_EMO[i.ch]+" "+(chain?"":i.ch+": ")+i.n)); nm.append(el("span","fit "+(i.fit?"ok":"no"), i.fit?"passt":"zu viel")); { const bd=ffBadge(i); if(bd && !i.av.length) nm.append(el("span","ffb "+bd[1], bd[0])); const ab=avoidBadge(i.av); if(ab) nm.append(ab); } l.append(nm, el("div","macros",macroTxt(i)+" · "+Math.round(i.p/i.kcal*100)+" g Eiweiß je 100 kcal"), el("div","note","Antippen für Details und Anpassen ›")); l.className="l"; l.addEventListener("click",()=>{ closeSheet(); setTimeout(()=>openFFItem(k,i),230); });
         const b=el("button","btn small ghost","+"); b.setAttribute("aria-label",i.n+" eintragen"); b.addEventListener("click",()=>{ closeSheet(); addFood(k,{n:i.ch+": "+i.n, kcal:i.kcal, p:i.p, c:i.c, f:i.f, out:true}); });
         r.append(l,b); box.append(r);
       });
@@ -3345,6 +3355,7 @@ async function scan(k){
   let m=null, off=false; try{ m = await lookupCode(code); }catch(e){ off=true; }
   if(!m){ openManual(k, code); toast(off ? "Open Food Facts nicht erreichbar ("+(offErr||"kein Netz")+"). Werte von der Packung eintragen, ab dann kennt die App das Produkt" : "Code "+code+" ist noch nicht in der Datenbank. Werte von der Packung eintragen, ab dann kennt die App das Produkt"); return; }
   if(m.k100==null) toast("Keine Nährwerte hinterlegt, bitte von der Packung ergänzen");
+  { const ah=avoidHits(m.n+" "+(m.brand||"")); if(ah.length) toast((ah.some(a=>a.lvl==="allergy")?"⚠️ Achtung, enthält vermutlich: ":"🚫 Enthält: ")+ah.map(a=>a.label).join(", ")+". Zutaten auf der Packung prüfen."); }
   openAmount(k,m);
 }
 function openSearch(k){
@@ -3360,7 +3371,7 @@ function openSearch(k){
     function show(items, msg){
       const seen=new Set(); items=items.filter(m=>{ const k=m.code||(m.n+"|"+m.brand); if(seen.has(k)) return false; seen.add(k); return true; });
       out.innerHTML=""; if(msg) out.append(el("div","note",msg));
-      items.forEach(m=>{ const r=el("div","opt"); const l=el("div"); l.append(el("div","nm",foodEmoji(m.n)+" "+m.n)); l.append(el("div","macros",[m.brand, m.k100!=null?de(m.k100)+" kcal":"kcal fehlt", "P "+fmtAmt(m.p100||0), "K "+fmtAmt(m.c100||0), "F "+fmtAmt(m.f100||0)].filter(Boolean).join(" · ")+" je 100 g"));
+      items.forEach(m=>{ const r=el("div","opt"); const l=el("div"); const nmx=el("div","nm",foodEmoji(m.n)+" "+m.n); { const ab=avoidBadge(avoidHits(m.n+" "+(m.brand||""))); if(ab) nmx.append(ab); } l.append(nmx); l.append(el("div","macros",[m.brand, m.k100!=null?de(m.k100)+" kcal":"kcal fehlt", "P "+fmtAmt(m.p100||0), "K "+fmtAmt(m.c100||0), "F "+fmtAmt(m.f100||0)].filter(Boolean).join(" · ")+" je 100 g"));
         const a=el("button","btn small ghost","Wählen"); a.addEventListener("click",()=>openAmount(k,m)); r.append(l,a); out.append(r); });
     }
     show(own(), state.myfoods.length?"Deine Lebensmittel":"");
@@ -3428,9 +3439,9 @@ function renderRecipes(){
   const nr=el("div","grid2"); const nb=el("button","btn","Eigenes Rezept"); nb.onclick=()=>openRecipeForm(); const ni=el("button","btn ghost","Aus Text, TikTok"); ni.onclick=()=>openRecipeImport(""); nr.append(nb,ni); box.append(nr);
   const sq=el("input"); sq.type="search"; sq.placeholder="Rezept suchen, z. B. Hähnchen, Kuchen"; sq.value=recQ; sq.setAttribute("aria-label","Rezept suchen"); sq.style.cssText="width:100%;margin:8px 0";
   sq.addEventListener("input",()=>{ recQ=sq.value; renderRecipes(); const n=$("recipes").querySelector('input[type="search"]'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } }); box.append(sq);
-  const q=normTxt(recQ), list=allRecipes().filter(r=>!q || normTxt(r.n+" "+r.z.map(z=>z[2]).join(" ")).includes(q)); if(!list.length) box.append(el("div","note","Kein Rezept gefunden."));
+  const q=normTxt(recQ), list=allRecipes().filter(r=>!q || normTxt(r.n+" "+r.z.map(z=>z[2]).join(" ")).includes(q)).map(r=>{ r._av=avoidHits(r.n+" "+r.z.map(z=>z[2]).join(" ")); return r; }).sort((a,b)=>(a._av.length?1:0)-(b._av.length?1:0)); if(!list.length) box.append(el("div","note","Kein Rezept gefunden."));
   list.forEach(r=>{
-    const d=el("details","recipe"); if(openRec.has(r.id)) d.open=true; d.addEventListener("toggle",()=>{ if(d.open) openRec.add(r.id); else openRec.delete(r.id); }); const s=el("summary"); const t=el("div","rhead"); t.append(el("span","remo",foodEmoji(r.n))); const tt=el("div"); t.append(tt); const rn=el("span",null,r.n); tt.append(rn); if(r.mine) rn.append(el("span","pill rmine","eigenes"));
+    const d=el("details","recipe"); if(openRec.has(r.id)) d.open=true; d.addEventListener("toggle",()=>{ if(d.open) openRec.add(r.id); else openRec.delete(r.id); }); const s=el("summary"); const t=el("div","rhead"); t.append(el("span","remo",foodEmoji(r.n))); const tt=el("div"); t.append(tt); const rn=el("span",null,r.n); tt.append(rn); if(r.mine) rn.append(el("span","pill rmine","eigenes")); { const ab=avoidBadge(r._av); if(ab) rn.append(ab); }
     { const pn=(state.recipePor||{})[r.id]; const m = r.unit && pn ? (()=>{ const t=sumIng(r.z.map(([a,u,n])=>({a:a/pn,u,n}))); return {kcal:Math.round(t[0]),p:Math.round(t[1]),c:Math.round(t[2]),f:Math.round(t[3])}; })() : r;
       tt.append(el("div","macros",(r.box? r.por+" Boxen, je Box: " : r.unit? (pn||r.por)+" "+r.unit+"e, je "+r.unit+": " : "1 Portion: ")+macroTxt(m))); } s.append(t); d.append(s);
     const tb=el("table"), body=el("tbody"); r.z.forEach(([a,u,n])=>{ const tr=el("tr"); tr.append(el("td","num",fmtAmt(a)+" "+u), el("td",null,n)); body.append(tr); }); tb.append(body); d.append(tb);
@@ -4469,6 +4480,7 @@ function openSettings(first){
     const [lme,iMe]=field("Körpermaße alle ... Tage","number",pr.measEvery||14); p.append(lme);
     if(!first){ const ts=el("div"); let so=P().sound!==false; const sS=toggleRow(ts,"Töne", so, null, "Kurze Klänge beim Abhaken, bei Erfolgen und wenn die Waage fertig gemessen hat"); sS.addEventListener("click",()=>{ so=!so; sS.setAttribute("aria-checked",so?"true":"false"); P().sound=so; persist(); if(so) sfx("done"); }); p.append(ts); }
     if(!first){ const th=el("div"); let ho=!!P().habitsOn; const sH=toggleRow(th,"Gewohnheiten auf Heute anzeigen", ho, null, "Tageslicht, Nicht stören, TV Timer zum Abhaken"); sH.addEventListener("click",()=>{ ho=!ho; sH.setAttribute("aria-checked",ho?"true":"false"); P().habitsOn=ho; persist(); render(); }); p.append(th); }
+    try{ avoidSettings(p); }catch(e){ console.error(e); }
     if(!first){ const tb=el("button","btn ghost small","Kurze Tour nochmal ansehen"); tb.addEventListener("click",()=>{ closeSheet(); const h=document.querySelector('nav.tabs [data-tab="heute"]'); if(h) h.click(); setTimeout(()=>startTour(0),450); }); p.append(tb); }
     { const ls=el("label","f","Schrittziel pro Tag"), ss=el("select"); [6000,8000,10000,12000].forEach(v=>{ const o=el("option",null,v.toLocaleString("de-DE")); o.value=v; ss.append(o); }); ss.value=String(pr.stepGoal||8000); ss.addEventListener("change",()=>{ P().stepGoal=Number(ss.value); persist(); }); ls.append(ss); p.append(ls); }
     sec("Trainingsplan");
@@ -5305,9 +5317,10 @@ function quickCat(f){ if(f.pmm) return "pmm"; if(f.mine) return "mine"; const n=
 function quickAll(){ const used=new Set(QUICK.map(q=>q.rid||(QUICK_SRC[q.n]||[])[0]).filter(Boolean)); return QUICK.map(f=>Object.assign({},f)).concat(RECIPES.filter(r=>!used.has(r.id)).map(r=>({n:r.n, kcal:r.kcal, p:r.p, c:r.c, f:r.f, rid:r.id}))).concat((state.myRecipes||[]).map(r=>({n:r.n, kcal:r.kcal, p:r.p, c:r.c, f:r.f, rid:r.id, mine:true}))).concat(PMM.map(x=>Object.assign(pmmItem(x),{pmm:true}))); }
 let qCat=null, qQuery="";
 function defaultQCat(k){ const s=mealSlotOf(k,{t:Date.now()}); return s==="fr"?"fr":s==="sn"?"sn":"main"; }
-function qFilter(cat,q){ const nq=normTxt(q||""); return quickAll().filter(f=>(!cat||quickCat(f)===cat) && (!nq || normTxt(f.n).includes(nq))); }
+function qFilter(cat,q){ const nq=normTxt(q||""); const L=quickAll().filter(f=>(!cat||quickCat(f)===cat) && (!nq || normTxt(f.n).includes(nq))); if(!avoidList().length) return L;
+  L.forEach(f=>{ f.av=avoidHits(avoidTextFood(f)); }); return L.filter(f=>nq || !f.av.some(a=>a.lvl==="allergy")).sort((a,b)=>(a.av.length?1:0)-(b.av.length?1:0)); }
 function qTile(k,f,big){ const b=el("button","qtile"+(big?" lg":"")), im=el("div","qimg"); im.style.background=FCAT_BG[quickCat(f)]||FCAT_BG.main; im.append(el("span",null,foodEmoji(f.n)));
-  b.append(im, el("b",null,f.n.replace(/^PMM /,"").replace(" (½ Tüte)","")), el("small",null,de(f.kcal)+" kcal · "+de(f.p)+" g P"));
+  b.append(im, el("b",null,f.n.replace(/^PMM /,"").replace(" (½ Tüte)","")), el("small",null,de(f.kcal)+" kcal · "+de(f.p)+" g P")); if(f.av && f.av.length){ b.classList.add("avoided"); const ab=avoidBadge(f.av); if(ab) b.append(ab); }
   b.addEventListener("click",()=>openFoodItem(k,f)); return b; }
 function renderQuickCard(k){
   const box=$("quickCard"); if(!box) return; if(qCat===null) qCat=defaultQCat(k);
@@ -5973,7 +5986,7 @@ async function scanCamButton(bar){
 // v2.0.83: Kantine: beste Wahl für diese Mahlzeit (viel Eiweiß, passt ins Budget), Bewertung je Gericht
 function mealBudget(k, leftK){ const h=new Date().getHours(), sh=state.shift[k]||"frei"; const share = h<10 ? 0.25 : h<15 ? 0.32 : h<20 ? 0.3 : 0.15; const g=goalKcal(k); return Math.max(300, Math.min(leftK, 850, Math.round(g*share))); }
 function bestCombos(ch, budget, needP){
-  const it=FASTFOOD.filter(x=>x[0]===ch && !/dessert|pudding/i.test(x[1])).map(x=>({n:x[1],kcal:x[2],p:x[3],c:x[4],f:x[5],half:/^Halbes/.test(x[1])}));
+  const it=FASTFOOD.filter(x=>x[0]===ch && !/dessert|pudding/i.test(x[1]) && !avoidHits(x[1]+" "+((ffInfo({ch:x[0],n:x[1],kcal:x[2],p:x[3],c:x[4],f:x[5]})||{}).desc||"")).length).map(x=>({n:x[1],kcal:x[2],p:x[3],c:x[4],f:x[5],half:/^Halbes/.test(x[1])}));
   const early=new Date().getHours()<10, mains=it.filter(i=>!i.half && (!early || /brötchen/i.test(i.n))), halves=it.filter(i=>i.half), out=[];
   const add=parts=>{ const t=parts.reduce((a,i)=>({kcal:a.kcal+i.kcal,p:a.p+i.p,c:a.c+i.c,f:a.f+i.f}),{kcal:0,p:0,c:0,f:0}); if(t.kcal>budget*1.1) return; const pp=Math.min(t.p,needP+10); out.push({parts, t, score: pp*3 - Math.max(0,t.p-needP-10)*0.5 + t.p/t.kcal*100*4 - t.f*0.6 - Math.abs(budget-t.kcal)/60}); };
   mains.forEach(m=>{ add([m]); halves.forEach(h=>{ add([m,h]); }); });
@@ -5994,6 +6007,31 @@ function bestCard(k, ch, leftK, leftP){
   return c;
 }
 function ffBadge(i){ const pp=i.p/i.kcal*100, fp=i.f*9/i.kcal; if(pp>=7) return ["💪 viel Eiweiß","good"]; if(fp>=0.5 && pp<5) return ["⚠️ viel Fett, wenig Eiweiß","bad"]; return null; }
+
+
+// v2.0.84: Mag ich nicht und Allergien: Empfehlungen, Listen und Rezepte richten sich danach
+const AVOID=[["pilze","Pilze","🍄",/pilz|champignon|pfifferling/],["thunfisch","Thunfisch","🐟",/thunfisch/],["fisch","Fisch","🐠",/fisch|lachs|forelle|hering|seelachs|kabeljau|sardine|matjes/],["meer","Meeresfrüchte","🦐",/garnele|shrimp|muschel|tintenfisch|calamar|scampi|krabbe/],
+ ["tomate","Tomaten","🍅",/tomat|ketchup|pizza|bolognese|lasagne|chili con|chili box/],["zwiebel","Zwiebeln","🧅",/zwiebel/],["knoblauch","Knoblauch","🧄",/knoblauch|aioli|tzatziki/],["paprika","Paprika","🫑",/paprika/],["gurke","Gurke","🥒",/gurke/],["oliven","Oliven","🫒",/oliven(?!öl)|olive\b/],
+ ["kaese","Käse","🧀",/käse|cheese|mozzarella|gouda|parmesan|feta|cheddar|camembert|harzer|brie/],["stinkkaese","Harzer, Kochkäse & Co","🧀",/harzer|limburger|romadur|handkäse|quargel|kochkäse|olmützer/],["laktose","Milch, Laktose","🥛",/milch|joghurt|quark|skyr|sahne|käse|latte|cappuccino|flat white|butter|pudding|whey|kakao/],
+ ["ei","Ei","🥚",/\bei\b|eier|eiersalat|mayo|omelett|rührei|carbonara|waffel/],["gluten","Gluten, Weizen","🌾",/brot|brötchen|nudel|pasta|spaghetti|lasagne|wrap|pizza|mehl|hafer|porridge|oats|panier|schnitzel|burger|döner|dürüm|brezel|croissant|kuchen|waffel|toast|couscous|bulgur|lahmacun|nugget/],
+ ["nuss","Nüsse","🌰",/nuss|nüsse|mandel|cashew|walnuss|pistazie|nutella|marzipan/],["erdnuss","Erdnüsse","🥜",/erdnuss|peanut/],["soja","Soja","🫘",/soja|tofu|edamame|teriyaki/],["sellerie","Sellerie","🥬",/sellerie/],["senf","Senf","🟡",/senf/],["sesam","Sesam","⚪",/sesam|tahin|hummus/],
+ ["schwein","Schwein","🐷",/schwein|speck|schinken|salami|leberwurst|mett|bockwurst|bratwurst|leberkäse|gyros|kassler|bacon|carbonara|frikadelle/],["leber","Leber, Innereien","🫀",/leber(?!käse)|innerei|niere/],["scharf","Scharf","🌶️",/scharf|chili|jalape|sriracha|hot wings|zinger/],
+ ["kokos","Kokos","🥥",/kokos/],["banane","Banane","🍌",/banane/],["mayo","Mayo, Remoulade","🫙",/mayo|remoulade|aioli|fleischsalat|eiersalat|kartoffelsalat/],["koriander","Koriander","🌿",/koriander/]];
+function avoidList(){ const a=state.avoid||{}, out=[]; AVOID.forEach(([k,l,e,re])=>{ if(a[k]) out.push({k,label:l,e,re,lvl:a[k]}); }); (state.avoidCustom||[]).forEach(c=>{ if(c.t) out.push({k:"c:"+c.t,label:c.t,e:"🚫",re:new RegExp(c.t.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,"\\$&")),lvl:c.lvl||"no"}); }); return out; }
+let avoidCache=null, avoidKey="";
+function avoidHits(text){ const L=avoidList(); if(!L.length || !text) return []; const t=String(text).toLowerCase(); return L.filter(a=>a.re.test(t)); }
+function avoidTextFood(f){ let t=(f.n||"")+" "; try{ const rows=baseIngredients(f.src||f); if(rows) t+=rows.map(r=>r.n).join(" "); }catch(e){} if(f.rid){ const r=allRecipes().find(x=>x.id===f.rid); if(r&&r.z) t+=" "+r.z.map(z=>z[2]).join(" "); } return t; }
+function avoidBadge(h){ if(!h || !h.length) return null; const al=h.find(x=>x.lvl==="allergy"); return el("span","avb "+(al?"allergy":"no"), (al?"⚠️ Allergie: ":"🚫 ")+h.map(x=>x.label).slice(0,2).join(", ")); }
+function avoidSettings(p){
+  const box=el("div","avoidBox"); p.append(box);
+  const draw=()=>{ box.innerHTML=""; box.append(el("div","cat","🚫 Mag ich nicht und Allergien"), el("div","note","Einmal tippen: mag ich nicht (kommt nach unten, wird nicht empfohlen). Zweimal: Allergie (wird ausgeblendet, Warnung beim Scannen). Dreimal: wieder normal."));
+    const ch=el("div","chips wrapc avoidChips"); const a=state.avoid=state.avoid||{};
+    AVOID.forEach(([k,l,e])=>{ const b=el("button","av "+(a[k]||""),e+" "+l+(a[k]==="allergy"?" ⚠️":a[k]==="no"?" 🚫":"")); b.onclick=()=>{ a[k]= !a[k] ? "no" : a[k]==="no" ? "allergy" : undefined; if(!a[k]) delete a[k]; persist(); draw(); }; ch.append(b); });
+    (state.avoidCustom||[]).forEach((c,i)=>{ const b=el("button","av "+(c.lvl||"no"),"🚫 "+c.t+(c.lvl==="allergy"?" ⚠️":"")+" ×"); b.onclick=()=>{ if((c.lvl||"no")==="no"){ c.lvl="allergy"; } else state.avoidCustom.splice(i,1); persist(); draw(); }; ch.append(b); });
+    box.append(ch);
+    const row=el("div","row nowrap"); const inp=el("input"); inp.type="text"; inp.placeholder="Eigenes, z. B. Rosenkohl"; const add=el("button","btn small","Dazu"); add.onclick=()=>{ const t=inp.value.trim(); if(t.length<2) return; state.avoidCustom=state.avoidCustom||[]; state.avoidCustom.push({t,lvl:"no"}); persist(); draw(); }; row.append(inp,add); box.append(row); };
+  draw();
+}
 
 // ---------- Start
 (async function(){
