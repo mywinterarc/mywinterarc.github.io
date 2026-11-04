@@ -1012,6 +1012,100 @@ body::before{will-change:transform}
 html.sheetOpen body{overflow:hidden}
 html.sheetOpen nav.tabs{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--panel)}
 html.sheetOpen body::before,html.sheetOpen .mascot svg,html.sheetOpen .mascot .blink,html.sheetOpen .streakChip .fl,html.sheetOpen .todayCard .shine,html.sheetOpen .seq span.cur,html.sheetOpen .exhero img,html.sheetOpen .actEmo{animation-play-state:paused!important}
+/* ===== v2.0.93: aufgeräumt, Profil, Info, Bereiche, Flug zur Zielkarte */
+#nextCard{display:none!important}
+body:not([data-tab="training"]) #streakChip{display:none}
+body[data-tab="training"] #streakChip{animation:chipIn .5s var(--spring) both}
+@keyframes chipIn{from{opacity:0;transform:scale(.6) translateX(12px)}to{opacity:1;transform:none}}
+/* Profil Knopf */
+.profBtn{padding:0!important;background:transparent!important;border:0!important}
+.profBtn .avL{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:16px;color:#fff;background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#000));box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 35%,transparent);transition:background .4s ease,box-shadow .4s ease,transform .2s var(--swift)}
+.profBtn .avL svg{width:20px;height:20px}
+.profBtn:active .avL{transform:scale(.9)}
+.profTop{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.profTop > div:nth-child(2){flex:1;min-width:0}.profTop h2{margin:0}
+.profAv{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-size:24px;font-weight:800;color:#fff;background:linear-gradient(135deg,#FF7A45,#7C6CF0);box-shadow:0 8px 22px rgba(124,108,240,.35);animation:avPop .6s var(--spring) both}
+@keyframes avPop{from{transform:scale(.5) rotate(-12deg);opacity:0}to{transform:none;opacity:1}}
+.profList{display:flex;flex-direction:column;gap:8px}
+.profGrp{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:10px 4px 0}
+.profRow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:12px 14px;color:var(--ink);min-height:56px}
+.profRow,.profGrp{animation:rise .45s var(--swift) both;animation-delay:calc(var(--i,0) * 35ms)}
+.profRow:active{transform:scale(.98)}
+.profIc{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:19px;background:var(--bg);flex:0 0 auto}
+.profTx{flex:1;min-width:0;display:flex;flex-direction:column}.profTx b{font-size:15px}.profTx small{color:var(--muted);font-size:12.5px;line-height:1.3}
+.profGo{font-size:22px;color:var(--muted);transition:transform .2s var(--swift)}.profRow:active .profGo{transform:translateX(3px)}
+/* Info Knöpfe */
+h3.hasInfo{display:flex;align-items:center;gap:8px}
+h3.hasInfo > .infoBtn{margin-left:auto}
+.infoBtn{flex:0 0 auto;width:24px;height:24px;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--muted) 60%,transparent);background:transparent;color:var(--muted);font:italic 800 13px/1 Georgia,serif;display:inline-grid;place-items:center;padding:0;margin-left:6px;vertical-align:middle;position:relative;transition:transform .2s var(--swift),color .2s,border-color .2s}
+.infoBtn::after{content:"";position:absolute;inset:-10px}
+.infoBtn:active{transform:scale(.85);color:var(--accent);border-color:var(--accent)}
+#hero > .label.hasInfo{display:flex;align-items:center;justify-content:center}
+.trLab.hasInfo .infoBtn{color:rgba(255,255,255,.85);border-color:rgba(255,255,255,.6);width:20px;height:20px;font-size:11px}
+.infoSec{background:var(--bg);border-radius:16px;padding:12px 14px;margin-top:10px}
+.infoSec p{margin:6px 0 0;line-height:1.45}
+.infoH{display:flex;align-items:center;gap:8px}.infoIc{font-size:18px}
+.wissen{display:flex;flex-direction:column;gap:6px}
+.wiss{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--panel)}
+.wiss summary{font-weight:700;cursor:pointer}
+.wissB p{margin:8px 0 0;line-height:1.45}.wissTun{font-weight:600}
+.wiss[open] .wissB{animation:rise .35s var(--swift)}
+/* Segmente mit gleitender Markierung */
+.seg.pilled{position:relative;isolation:isolate}
+.seg.pilled > .segPill{position:absolute;left:0;top:0;z-index:0;border-radius:999px;background:var(--panel);box-shadow:0 2px 6px rgba(0,0,0,.14);transition:transform .5s var(--spring),width .45s var(--swift);pointer-events:none}
+.seg.pilled > button{position:relative;z-index:1}
+.seg.pilled > button[aria-pressed="true"]{background:transparent!important;box-shadow:none!important;color:var(--ink)}
+.bigSeg{margin-bottom:12px}
+.bigSeg button{padding:10px 4px;font-size:14.5px}
+.segIn{animation:riseX .5s var(--swift) both}
+#p-woche[data-seg="schlaf"] > [data-wseg="schicht"],#p-woche[data-seg="schicht"] > [data-wseg="schlaf"]{display:none!important}
+#p-training[data-seg="plan"] > [data-tseg]:not([data-tseg="plan"]),#p-training[data-seg="fort"] > [data-tseg]:not([data-tseg="fort"]),#p-training[data-seg="ueb"] > [data-tseg]:not([data-tseg="ueb"]){display:none!important}
+#p-training > .secHide{display:none!important}
+#v92Status[data-v="u"] .stPane[data-v="k"],#v92Status[data-v="k"] .stPane[data-v="u"]{display:none}
+#v92Status .stPane{display:flex;flex-direction:column;gap:8px;margin-top:10px;animation:rise .35s var(--swift)}
+#v92Status #stSeg{margin-top:4px}
+/* Hinweise beim ersten Besuch */
+.hint92{display:grid!important;grid-template-columns:auto 1fr;column-gap:12px;row-gap:8px;align-items:start;padding:14px 16px!important;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 16%,var(--panel)),var(--panel));border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);animation:hintIn .6s var(--spring) both;overflow:hidden}
+.hint92 .hIc{font-size:24px;line-height:1.1;animation:wave 1.6s ease .5s 2;transform-origin:70% 80%}
+.hint92 .hTx{flex:1}.hint92 .hTx p{margin:4px 0 0;font-size:14px;line-height:1.4;color:var(--muted)}
+.hint92 .btn{grid-column:2;justify-self:start;padding:7px 14px;font-size:13.5px}
+.hint92.bye{transition:height .45s var(--swift),opacity .3s ease,margin .45s var(--swift),padding .45s var(--swift);opacity:0;margin-top:0!important;margin-bottom:0!important;padding-top:0!important;padding-bottom:0!important}
+@keyframes hintIn{from{opacity:0;transform:translateY(-10px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes wave{0%,100%{transform:rotate(0)}25%{transform:rotate(16deg)}75%{transform:rotate(-10deg)}}
+/* Flug zur Zielkarte */
+.flyFrame{position:fixed;z-index:150;pointer-events:none;border-radius:14px;border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);box-shadow:0 10px 30px color-mix(in srgb,var(--accent) 30%,transparent)}
+.ownerPulse{animation:ownerPulse 1.2s var(--swift)}
+@keyframes ownerPulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent);transform:scale(1)}25%{transform:scale(1.012)}45%{box-shadow:0 0 0 7px color-mix(in srgb,var(--accent) 22%,transparent)}100%{box-shadow:0 0 0 16px transparent;transform:none}}
+.hero .tile{cursor:pointer;transition:transform .2s var(--swift)}.hero .tile:active{transform:scale(.94)}
+.hero .tile .label::after{content:" ›";opacity:.6}
+.hero .stepline{cursor:pointer}
+/* Heute: Schicht kompakt */
+.shCard .shSum{display:flex;align-items:center;gap:10px;margin-top:2px;flex-wrap:wrap}
+.shCard .shSt{flex:1;color:var(--muted);font-size:14px;min-width:120px}
+.shCard .shTog{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 12px;font-weight:700;font-size:13.5px;color:var(--ink);display:inline-flex;gap:4px;align-items:center}
+.shCard .shTog .chev{display:inline-block;transition:transform .35s var(--spring)}
+.shCard.open .shTog .chev{transform:rotate(180deg)}
+.shCard.noShift .shTog{display:none}
+.shCard .shBody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--swift)}
+.shCard.open .shBody{grid-template-rows:1fr}
+.shCard .shInner{overflow:hidden;min-height:0;opacity:0;transform:translateY(-6px);transition:opacity .3s ease,transform .4s var(--swift)}
+.shCard.open .shInner{opacity:1;transform:none;padding-top:10px}
+/* Tagesablauf: der nächste Punkt */
+#schedule .item.isnext{position:relative;background:color-mix(in srgb,var(--accent) 9%,transparent);border-radius:14px}
+#schedule .item.isnext .txt::before{content:"Als Nächstes";display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:1px}
+#schedule .item.isnext .t{position:relative}
+#schedule .item.isnext .t::after{content:"";position:absolute;left:-9px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:var(--accent);animation:nowDot 1.8s ease-in-out infinite}
+@keyframes nowDot{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 60%,transparent)}50%{box-shadow:0 0 0 6px transparent}}
+/* Titel gleitet */
+.ttlIn{animation:ttlIn .45s var(--swift)}
+@keyframes ttlIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.seg.pilled > .segPill{transition:none}.flyFrame{display:none}}
+
+body:not([data-tab="training"]) .headR > div:has(> #weekLabel){display:none!important}
+#pane[data-kind="homed"] > .card{box-shadow:none!important;border:0!important;background:transparent!important;padding:0!important;margin:0!important}
+#pane[data-kind="homed"] > .card > h3:first-child,#pane[data-kind="homed"] > .card > .between:first-child > h3{display:none}
+#pane[data-kind="homed"] > details > summary{display:none}
+.shCard .shCal{display:block;margin-top:10px;font-weight:700}
 </style>
 </head>
 <body>
@@ -2010,7 +2104,7 @@ function widgetPush(){ clearTimeout(widgetT); widgetT=setTimeout(async ()=>{ try
   const js=JSON.stringify(Object.assign({},data,{u:0})); if(js===widgetLast) return; widgetLast=js;
   await Prefs.set({key:"widget", value:JSON.stringify(data)}); const WB=plug("WidgetBridge"); if(WB && WB.update) await WB.update();
 }catch(e){} }, 1500); }
-function render(){ try{ requestAnimationFrame(()=>{ try{ decorateTraining(); }catch(e){ console.error(e); } }); }catch(e){} try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
+function render(){ try{ requestAnimationFrame(()=>{ try{ decorateTraining(); }catch(e){ console.error(e); } try{ v92Post(); }catch(e){ console.error(e); } }); }catch(e){} try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
   applyPlan(); applyTheme(); STEP_GOAL = Number(P().stepGoal)||8000; widgetPush(); setTimeout(checkBadges, 50);
   const k = activeDay(), w = planWeek(k), ph = phase(w);
   $("dateLabel").textContent = (P().name ? "Hi "+P().name+" · " : "") + parseKey(k).toLocaleDateString("de-DE",{weekday:"long", day:"numeric", month:"long"}) + (k!==calToday() ? " · Schicht läuft noch" : "");
@@ -6265,12 +6359,237 @@ function decorateTraining(){
   const ul=$("unitList"); if(ul && !ul.previousElementSibling?.classList?.contains("trListHead")){ const hd=el("div","trListHead"); hd.append(el("span",null,"Übungen"), el("span","note",card.querySelectorAll("#unitList .ex").length+" Stück · Tippe Sätze oder Tauschen")); ul.before(hd); }
 }
 
+// v2.0.93: Aufgeräumt. Jedes Thema hat einen festen Tab, Heute ist die Übersicht.
+// Schlaf & Schicht statt Woche, Training in Bereichen, Profil oben rechts, Info Knöpfe, Hinweise statt Tour, Animationen die zeigen wo etwas wohnt.
+const V92 = { home:null, homed:new Set(), wseg:"schlaf", tseg:"plan", shOpen:false };
+try{ V92.wseg = localStorage.getItem("wa_wseg") || "schlaf"; V92.tseg = localStorage.getItem("wa_tseg") || "plan"; }catch(e){}
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function cardByH3(sec, re){ const s=typeof sec==="string"?$(sec):sec; if(!s) return null; return [...s.querySelectorAll(".card")].find(c=>{ const h=c.querySelector("h3, summary"); return h && re.test(h.textContent.trim()); }) || null; }
+
+// ---------- Erklärungen: ein Text pro Thema, auch für „Wissen“ im Profil
+const INFO = {
+  ready:{t:"Trainingsbereitschaft", g:"Heute", was:"Eine Zahl von 0 bis 100, wie gut dein Körper heute Training wegsteckt.", wie:"Winterarc vergleicht Schlaf, Ruhepuls und HRV der letzten Nacht mit deinem eigenen Schnitt der letzten 14 Tage. 75 ist ein ganz normaler Tag für dich. Mehrere harte Trainingstage am Stück geben einen kleinen Abzug. Ohne Uhr trägst du einfach ein, wie du dich fühlst.", tun:"Ab 75 normal trainieren, über 85 darf es schwerer werden. Unter 60 lieber leichter oder kürzer, Technik statt Rekord."},
+  trday:{t:"Heute dran", g:"Training", was:"Die nächste Einheit aus deinem Plan.", wie:"Der Plan läuft als feste Reihenfolge. Lässt du einen Tag aus, rückt nichts weiter, die Einheit wartet einfach auf dich. Der Ring zeigt, wie viele Einheiten diese Woche schon geschafft sind.", tun:"Starten tippen. Keine Zeit fürs Gym? „Zu Hause“ macht daraus eine Version ohne Geräte."},
+  sleep:{t:"Schlaf", g:"Schlaf & Schicht", was:"Wie lange und wie regelmäßig du schläfst.", wie:"Die Nächte kommen von der Uhr über Health Connect. Schlafschuld zählt alle Minuten zusammen, die dir im Zeitraum zu deinem Schlafziel fehlen. Streuung zeigt, wie stark deine Bettzeit schwankt.", tun:"Bei Schichtarbeit zählt Regelmäßigkeit fast so viel wie Länge. Streuung unter 45 Minuten ist richtig gut. Schuld lieber mit 30 bis 60 Minuten extra über ein paar Tage abbauen als mit einem langen Tag."},
+  calc:{t:"Schlafrechner und Umstellen", g:"Schlaf & Schicht", was:"Sagt dir, wann du ins Bett musst, und plant den Wechsel zwischen den Schichten.", wie:"Aus Aufstehzeit und Schlafziel rechnet er die Bettzeit. Vor einem Schichtwechsel verschiebt der Plan deinen Schlaf Nacht für Nacht, ideal um eine Stunde früher oder anderthalb Stunden später pro Tag, weil der Körper das gut mitmacht.", tun:"Plan übernehmen, dann stellt sich der Wecker für jede Nacht passend."},
+  alarm:{t:"Wecker", g:"Schlaf & Schicht", was:"Der Winterarc Wecker, der dich wirklich wach bekommt.", wie:"Er stellt sich selbst nach Schicht und Umstellplan, klingelt laut und lässt sich nur mit einer Rechenaufgabe ausschalten. Er läuft nur in der installierten App.", tun:"Einmal testen, damit du weißt, wie laut er ist. Handy nicht auf lautlos mit Wecker aus."},
+  shifts:{t:"Schichten", g:"Schlaf & Schicht", was:"Dein Schichtkalender. Daran hängt fast alles in der App.", wie:"Tagesablauf, Essen, Koffeinstopp, Erinnerungen, Wecker und Trainingstage richten sich nach der Schicht des Tages.", tun:"Ganze Woche mit einem Tipp setzen, einzelne Tage danach ändern."},
+  status:{t:"Urlaub oder krank", g:"Schlaf & Schicht", was:"Tage, an denen der normale Plan Pause hat.", wie:"Krank kostet keine Serie und die Trainingserinnerung schweigt. Im Urlaub richtet sich der Ablauf nach deiner Aufstehzeit.", tun:"Früh eintragen, dann passt der Rest automatisch."},
+  steps:{t:"Schritte", g:"Körper", was:"Deine Schritte pro Tag von der Uhr.", wie:"Kommt über Health Connect. Das Tagesziel stellst du im Profil ein. Kilometer sind grob aus der Schrittlänge geschätzt.", tun:"Ein Spaziergang nach dem Essen bringt schnell 2.000 bis 3.000 Schritte und hilft beim Abnehmen mehr als gedacht."},
+  heart:{t:"Puls und HRV", g:"Körper", was:"Ruhepuls und HRV zeigen, wie erholt dein Nervensystem ist.", wie:"Niedriger Ruhepuls und hohe HRV heißen gut erholt. Verglichen wird nur mit deinen eigenen Werten, nicht mit anderen.", tun:"Mehrere Tage höherer Ruhepuls? Oft zu wenig Schlaf, Stress oder ein Infekt im Anmarsch. Dann Training leichter."},
+  weight:{t:"Gewicht und Trend", g:"Körper", was:"Dein Gewicht und wohin es wirklich geht.", wie:"Einzelne Tage schwanken durch Wasser, Salz und Essen im Bauch. Deshalb zählt der Schnitt über 7 Tage. Bewertet wird das Tempo passend zu deinem Ziel.", tun:"Morgens nach dem Klo und vor dem Essen wiegen, immer gleich. Nicht über einen einzelnen Wert ärgern."},
+  bc:{t:"Körperanalyse", g:"Körper", was:"Fett, Muskeln, Wasser und mehr von der Waage.", wie:"Die Waage misst nur Gewicht und elektrischen Widerstand. Alles andere rechnet sie daraus. FFMI ist deine fettfreie Masse geteilt durch Größe zum Quadrat.", tun:"Nur unter gleichen Bedingungen vergleichen: morgens, barfuß, trockene Füße. Der Verlauf über Wochen sagt mehr als ein einzelner Wert."},
+  bilanz:{t:"Kalorienbilanz", g:"Essen", was:"Wie viel du wirklich verbrauchst.", wie:"Sobald 10 Tage Essen und 8 Gewichtswerte da sind, vergleicht Winterarc was du gegessen hast mit dem, was die Waage macht. Daraus kommt dein echter Verbrauch, und einmal pro Woche ein Vorschlag für dein Kalorienziel.", tun:"Möglichst jeden Tag alles eintragen, auch kleine Snacks. Je vollständiger, desto genauer."},
+  caf:{t:"Koffein", g:"Essen", was:"Wie viel Koffein gerade noch in dir steckt.", wie:"Koffein baut sich ungefähr zur Hälfte alle 5 Stunden ab. Die App rechnet das für jedes Getränk hoch und schaut, was zur Schlafenszeit noch übrig ist. Unter 50 mg passt es.", tun:"Den Koffeinstopp im Tagesablauf ernst nehmen. Gerade vor dem Schlafen nach der Nachtschicht."},
+  strength:{t:"Kraft pro Übung", g:"Training", was:"Ob du bei einer Übung stärker wirst.", wie:"Aus Gewicht und Wiederholungen schätzt die App dein Maximum für eine Wiederholung. So siehst du Fortschritt auch dann, wenn die Wiederholungen mal wechseln.", tun:"Steigt die Linie über Wochen, passt alles. Stockt sie 3 Wochen, Wiederholungsbereich oder Übung wechseln."},
+  sets:{t:"Sätze je Woche", g:"Training", was:"Wie viele harte Sätze jeder Muskel pro Woche bekommt.", wie:"Gezählt werden deine Arbeitssätze, Aufwärmsätze nicht. Für Muskelaufbau gelten etwa 10 bis 20 Sätze pro Muskel und Woche als gute Spanne.", tun:"Liegt ein Muskel deutlich drunter, ein, zwei Sätze dazu. Deutlich drüber und Gelenke meckern: etwas weniger."},
+  rec:{t:"Rekorde", g:"Training", was:"Deine besten Leistungen je Übung.", wie:"Ein neuer Rekord zählt, wenn das geschätzte Maximum höher ist als je zuvor.", tun:"Rekorde kommen von allein, wenn du regelmäßig trainierst. Nicht jede Einheit jagen."},
+  goals:{t:"Ziele", g:"Training", was:"Deine eigenen Ziele mit Fortschritt.", wie:"Du legst fest, was du schaffen willst, zum Beispiel ein Gewicht für 5 Wiederholungen oder 5 km in einer Zeit. Die App zeigt, wie weit du bist.", tun:"Ein, zwei Ziele reichen. Lieber realistisch und erreicht als groß und vergessen."},
+  muscle:{t:"Muskelverteilung", g:"Training", was:"Welche Muskeln die letzten 7 Tage wie viel gemacht haben.", wie:"Jeder Satz zählt für den Hauptmuskel der Übung.", tun:"Siehst du ein Ungleichgewicht, beim nächsten Mal die Übung für den schwächeren Teil zuerst."},
+  year:{t:"Dein Jahr und die Serie", g:"Training", was:"Alle Trainingstage auf einen Blick und deine Serie.", wie:"Die Serie zählt Tage am Stück, an denen du dein Programm durchziehst. Ruhetage laut Plan zählen mit, krank kostet nichts.", tun:"Serie gerissen? Egal. Morgen geht sie wieder los."},
+  next:{t:"Tagesablauf", g:"Heute", was:"Dein Tag passend zur Schicht.", wie:"Essen, Supplements, Koffeinstopp, Training und Schlafenszeit richten sich nach Schicht und Aufstehzeit. Der nächste offene Punkt ist hervorgehoben.", tun:"Abhaken mit einem Tipp. Antippen des Textes zum Ändern oder Überspringen."}
+};
+function openInfo(key){
+  const x=INFO[key]; if(!x) return; buzz(6);
+  openSheet(p=>{ sheetHead(p, x.t);
+    const sec=(ic,h,t)=>{ const d=el("div","infoSec"); const hd=el("div","infoH"); hd.append(el("span","infoIc",ic), el("b",null,h)); d.append(hd, el("p",null,t)); p.append(d); };
+    sec("💡","Was ist das?",x.was); sec("🧮","Wie rechnet Winterarc das?",x.wie); sec("✅","Was kann ich tun?",x.tun);
+    const w=el("button","link","Alles erklärt im Wissen ›"); w.addEventListener("click",()=>openWissen(key)); p.append(w);
+  }, "info");
+}
+function infoBtn(key){ const b=el("button","infoBtn","i"); b.type="button"; b.setAttribute("aria-label","Erklärung: "+INFO[key].t); b.addEventListener("click",e=>{ e.preventDefault(); e.stopPropagation(); openInfo(key); }); return b; }
+function putInfo(host, key){ if(!host || host.querySelector(":scope > .infoBtn")) return; host.classList.add("hasInfo"); host.append(infoBtn(key)); }
+function injectInfos(){
+  const h=q=>document.querySelector(q);
+  putInfo(h("#hero > .label"), "ready");
+  putInfo(h("#trHero .trLab"), "trday");
+  putInfo(h("#sleepCard h3"), "sleep"); putInfo(h("#stepCard h3"), "steps"); putInfo(h("#heartCard h3"), "heart"); putInfo(h("#bcCard h3"), "bc");
+  putInfo(h("#alarmCard h3"), "alarm"); putInfo(h("#strengthCard h3"), "strength"); putInfo(h("#setsWeekCard h3"), "sets"); putInfo(h("#recCard h3"), "rec"); putInfo(h("#goalCard h3"), "goals");
+  putInfo(h("#v92Status h3"), "status");
+  const sc=$("slOut") && $("slOut").closest(".card"); if(sc) putInfo(sc.querySelector("summary"), "calc");
+  const wl=$("weekList") && $("weekList").closest(".card"); if(wl) putInfo(wl.querySelector("h3"), "shifts");
+  const sch=$("schedule") && $("schedule").closest(".card"); if(sch) putInfo(sch.querySelector("h3"), "next");
+  [["p-koerper",/^Gewicht eintragen/,"weight"],["p-essen",/^Kalorienbilanz/,"bilanz"],["p-essen",/^Koffein/,"caf"],["p-training",/^Muskelverteilung/,"muscle"],["p-training",/^Dein Jahr/,"year"]].forEach(([s,re,k])=>{ const c=cardByH3(s,re); if(c) putInfo(c.querySelector("h3"), k); });
+}
+function openWissen(focus){
+  openSheet(p=>{ sheetHead(p,"📚 Wissen");
+    p.append(el("div","note","Alles, was Winterarc rechnet, kurz erklärt. Tippe ein Thema an."));
+    const groups={}; Object.entries(INFO).forEach(([k,x])=>{ (groups[x.g]=groups[x.g]||[]).push([k,x]); });
+    ["Heute","Schlaf & Schicht","Training","Essen","Körper"].forEach(g=>{ if(!groups[g]) return; p.append(el("div","cat",g));
+      const box=el("div","wissen"); groups[g].forEach(([k,x])=>{ const d=el("details","wiss"); const s=el("summary",null,x.t); d.append(s);
+        const b=el("div","wissB"); b.append(el("p",null,x.was), el("p",null,x.wie), Object.assign(el("p","wissTun"),{textContent:"👉 "+x.tun})); d.append(b);
+        if(k===focus){ d.open=true; setTimeout(()=>{ try{ d.scrollIntoView({block:"center", behavior:RM?"auto":"smooth"}); d.classList.add("ownerPulse"); }catch(e){} },350); }
+        box.append(d); }); p.append(box); });
+  }, "wissen");
+}
+
+// ---------- Karten, die im Profil wohnen (Erinnerungen, Uhr und Waage, Sicherung)
+function v92Homed(node){ if(!node) return; V92.homed.add(node); if(!node.isConnected || !node.closest("#pane")) V92.home.append(node); }
+function v92Rescue(){ V92.homed.forEach(n=>{ if(!n.isConnected) V92.home.append(n); }); }
+function openHomed(title, node, prep){
+  if(!node) return; try{ prep && prep(); }catch(e){ console.error(e); }
+  openSheet(p=>{ sheetHead(p,title); node.hidden=false; if(node.tagName==="DETAILS") node.open=true; p.append(node); }, "homed");
+}
+function openProfile(){
+  buzz(6);
+  openSheet(p=>{
+    const top=el("div","profTop"); const av=el("div","profAv",(P().name||"?").trim().charAt(0).toUpperCase()||"?");
+    const tx=el("div"); tx.append(el("h2",null,P().name||"Dein Profil"), el("div","note",($("weekLabel")||{}).textContent+" · "+($("phasePill")||{}).textContent));
+    const x=el("button","x","×"); x.setAttribute("aria-label","Schließen"); x.addEventListener("click",closeSheet);
+    top.append(av, tx, x); p.append(top);
+    const list=el("div","profList"); let n=0;
+    const row=(ic,t,sub,fn)=>{ const b=el("button","profRow"); b.style.setProperty("--i",n++); b.append(el("span","profIc",ic)); const m=el("span","profTx"); m.append(el("b",null,t), el("small",null,sub)); b.append(m, el("span","profGo","›")); b.addEventListener("click",()=>{ buzz(5); fn(); }); list.append(b); };
+    const grp=t=>{ list.append(Object.assign(el("div","profGrp",t),{style:"--i:"+(n++)})); };
+    grp("Du und dein Plan");
+    row("⚙️","Einstellungen","Über dich, Ziele, Trainingsplan, Aufstehzeiten, Aussehen",()=>openSettings(false));
+    row("🚫","Mag ich nicht und Allergien","Wird beim Essen überall beachtet",()=>openSheet(q=>{ sheetHead(q,"🚫 Mag ich nicht"); q._avoidOk=true; try{ avoidSettings(q); }catch(e){ console.error(e); } },"avoid"));
+    grp("Verbindungen");
+    row("🔔","Erinnerungen","Was dich wann erinnern darf",()=>openHomed("🔔 Erinnerungen", V92.rem, ()=>renderWoche()));
+    row("⌚","Uhr und Waage","Health Connect, Schlaf, Puls, Schritte",()=>openHomed("⌚ Uhr und Waage", $("hcCard"), ()=>renderHC()));
+    row("💾","Daten sichern","Vor Handywechsel oder Neuinstallieren",()=>openHomed("💾 Daten sichern", V92.bk));
+    grp("Hilfe");
+    row("📚","Wissen","Alles, was die App rechnet, kurz erklärt",()=>openWissen());
+    row("👋","Hinweise wieder zeigen","Die kurzen Erklärungen beim ersten Öffnen",()=>{ state.hints92={}; persist(); closeSheet(); setTimeout(()=>{ render(); toast("Hinweise sind wieder da"); },250); });
+    p.append(list);
+  }, "profile");
+}
+function v92Avatar(){ const g=$("openSettings"); if(!g) return; const ch=(P().name||"").trim().charAt(0).toUpperCase(); if(g.dataset.av!==ch){ g.dataset.av=ch; g.innerHTML=""; g.append(ch ? el("span","avL",ch) : Object.assign(el("span","avL"),{innerHTML:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'})); } }
+
+// ---------- Segmente mit gleitender Markierung
+function segPill(seg){
+  if(!seg) return; seg.classList.add("pilled"); let pl=seg.querySelector(":scope > .segPill"); if(!pl){ pl=el("span","segPill"); seg.prepend(pl); }
+  const b=seg.querySelector('button[aria-pressed="true"]'); if(!b || !b.offsetWidth) return;
+  const first=!pl.dataset.on; if(first) pl.style.transition="none";
+  pl.style.width=b.offsetWidth+"px"; pl.style.height=b.offsetHeight+"px"; pl.style.transform="translate("+b.offsetLeft+"px,"+b.offsetTop+"px)"; pl.dataset.on="1";
+  if(first){ void pl.offsetWidth; pl.style.transition=""; }
+}
+function mkSeg(id, opts, cur, onPick){
+  const s=el("div","seg bigSeg"); s.id=id; s.setAttribute("role","tablist");
+  opts.forEach(([v,l])=>{ const b=el("button",null,l); b.dataset.v=v; b.setAttribute("aria-pressed", v===cur?"true":"false"); b.addEventListener("click",()=>{ if(b.getAttribute("aria-pressed")==="true") return; const old=[...s.querySelectorAll("button")].findIndex(x=>x.getAttribute("aria-pressed")==="true"); s.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false")); segPill(s); buzz(5); onPick(v, opts.findIndex(o=>o[0]===v) > old ? 1 : -1); }); s.append(b); });
+  return s;
+}
+function segEnter(sec, attr, val, dir){
+  if(RM) return; const items=[...sec.querySelectorAll(":scope > ["+attr+'="'+val+'"]')].filter(x=>!x.hidden);
+  items.forEach((c,i)=>{ c.style.setProperty("--dx",(dir*26)+"px"); c.style.animationDelay=(Math.min(i,5)*35)+"ms"; c.classList.remove("segIn"); void c.offsetWidth; c.classList.add("segIn"); setTimeout(()=>{ c.classList.remove("segIn"); c.style.animationDelay=""; },800); });
+}
+
+// ---------- Hinweise beim ersten Besuch statt Tour
+const HINTS92 = {
+  heute:["👋","Heute ist jetzt deine Übersicht","Tippe auf Schlaf, Ruhepuls oder Schritte, dann springst du direkt dorthin, wo die Details wohnen. Die ⓘ Knöpfe erklären jede Zahl."],
+  woche:["🌙","Schlaf und Schicht an einem Ort","Oben umschalten: Schlaf mit Statistik, Rechner und Wecker. Schicht mit Kalender, Urlaub und krank."],
+  training:["💪","Training in drei Bereichen","Plan für heute und die Woche, Fortschritt mit Zielen und Rekorden, Übungen mit Verlauf und Regeln. Deine Serie steht jetzt nur hier oben."],
+  essen:["🍽","Alles eintragen über das Plus","Tippe bei einer Mahlzeit auf Plus, dann hast du alle Wege: scannen, suchen, Kantine, Text oder wie gestern. Koffein trägst du hier unten ein."],
+  koerper:["⚖️","Körper ist aufgeräumt","Schlaf ist nach Schlaf umgezogen. Uhr, Waage und Datensicherung findest du jetzt im Profil oben rechts."]
+};
+function v92Hint(t){
+  const sec=$("p-"+t); if(!sec) return; state.hints92=state.hints92||{}; let h=sec.querySelector(":scope > .hint92");
+  if(state.hints92[t]){ if(h && !h.classList.contains("bye")) h.remove(); return; }
+  if(h) return; const x=HINTS92[t]; if(!x) return;
+  h=el("div","card hint92"); const ic=el("div","hIc",x[0]); const tx=el("div","hTx"); tx.append(el("b",null,x[1]), el("p",null,x[2]));
+  const ok=el("button","btn small","Verstanden"); ok.addEventListener("click",()=>{ state.hints92[t]=true; persist(); buzz(8); if(RM){ h.remove(); return; } h.style.height=h.offsetHeight+"px"; h.classList.add("bye"); requestAnimationFrame(()=>{ h.style.height="0px"; }); setTimeout(()=>h.remove(),520); });
+  h.append(ic, tx, ok); const seg=sec.querySelector(":scope > .seg"); (seg ? seg.after(h) : sec.prepend(h));
+}
+
+// ---------- Springen dorthin, wo etwas wohnt: Rahmen fliegt vom Antippen zur Zielkarte
+function goOwner(t, target, src, seg){
+  buzz(8);
+  const setSeg=(sid,secId,v)=>{ const sg=$(sid), sc=$(secId); if(sc) sc.dataset.seg=v; if(sg) sg.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x.dataset.v===v?"true":"false")); };
+  if(seg && seg.wk){ V92.wseg=seg.wk; lsSet("wa_wseg",seg.wk); setSeg("wkSeg","p-woche",seg.wk); }
+  if(seg && seg.tr){ V92.tseg=seg.tr; lsSet("wa_tseg",seg.tr); setSeg("trSeg","p-training",seg.tr); }
+  const r0 = src && src.getBoundingClientRect(); let fr=null;
+  if(r0 && !RM){ fr=el("div","flyFrame"); Object.assign(fr.style,{left:r0.left+"px",top:r0.top+"px",width:r0.width+"px",height:r0.height+"px"}); document.body.append(fr); }
+  const nb=document.querySelector('nav.tabs [data-tab="'+t+'"]'); if(nb && tab!==t) nb.click(); else { render(); }
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const c = typeof target==="function" ? target() : (typeof target==="string" ? document.querySelector(target) : target);
+    if(!c){ if(fr) fr.remove(); return; }
+    const y = c.getBoundingClientRect().top + window.scrollY - 86; window.scrollTo({top:Math.max(0,y), behavior:"auto"});
+    const r1=c.getBoundingClientRect();
+    if(fr){ const a=fr.animate([{left:r0.left+"px",top:r0.top+"px",width:r0.width+"px",height:r0.height+"px",opacity:1,borderRadius:"14px"},{left:r1.left+"px",top:r1.top+"px",width:r1.width+"px",height:Math.min(r1.height,window.innerHeight-r1.top-10)+"px",opacity:.9,borderRadius:"22px",offset:.78},{left:r1.left+"px",top:r1.top+"px",width:r1.width+"px",height:Math.min(r1.height,window.innerHeight-r1.top-10)+"px",opacity:0,borderRadius:"22px"}],{duration:620,easing:"cubic-bezier(.22,1,.36,1)",fill:"forwards"}); a.onfinish=()=>fr.remove(); }
+    setTimeout(()=>{ c.classList.remove("ownerPulse"); void c.offsetWidth; c.classList.add("ownerPulse"); setTimeout(()=>c.classList.remove("ownerPulse"),1300); }, RM?0:430);
+  }));
+}
+
+// ---------- Einmal umbauen
+function layoutV92(){
+  V92.home=el("div"); V92.home.id="v92Home"; V92.home.hidden=true; document.body.append(V92.home);
+  TITLES.woche="Schlaf & Schicht";
+  // Navigation: Woche heißt jetzt Schlaf, Mond statt Kalender
+  const nb=document.querySelector('nav.tabs [data-tab="woche"]'); if(nb){ nb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>Schlaf'; nb.setAttribute("aria-label","Schlaf und Schicht"); }
+  // Profil statt Zahnrad
+  const g=$("openSettings"); if(g){ const n=g.cloneNode(false); n.className="gear profBtn"; n.setAttribute("aria-label","Profil und Einstellungen"); g.replaceWith(n); n.addEventListener("click",openProfile); v92Avatar(); }
+  // Schlaf & Schicht
+  const wk=$("p-woche"), cardOf=id=>$(id) && $(id).closest(".card");
+  const sch=cardOf("weekList"), vac=cardOf("vacFrom"), sick=cardOf("sickFrom"), rem=cardOf("toggles"), calc=cardOf("slOut"), slc=$("sleepCard");
+  if(wk){
+    const s=mkSeg("wkSeg",[["schlaf","🌙 Schlaf"],["schicht","📅 Schicht"]],V92.wseg,(v,dir)=>{ V92.wseg=v; lsSet("wa_wseg",v); wk.dataset.seg=v; window.scrollTo(0,0); requestAnimationFrame(v92Post); segEnter(wk,"data-wseg",v,dir); });
+    wk.prepend(s); wk.dataset.seg=V92.wseg;
+    if(slc){ s.after(slc); slc.dataset.wseg="schlaf"; }
+    if(calc){ (slc||s).after(calc); calc.dataset.wseg="schlaf"; const d=calc.querySelector("details"); if(d) d.open=true; }
+    if(sch){ sch.dataset.wseg="schicht"; (calc||slc||s).after(sch); const n0=sch.querySelector(":scope > .note"); if(n0) n0.remove(); }
+    // Urlaub und krank in einer Karte
+    if(vac && sick){ const st=el("div","card"); st.id="v92Status"; st.dataset.wseg="schicht";
+      const h=el("h3"); h.innerHTML='<svg class="hi"><use href="#i-plane"/></svg>Urlaub oder krank'; st.append(h);
+      const pa=el("div","stPane"), pb=el("div","stPane"); pa.dataset.v="u"; pb.dataset.v="k";
+      [...vac.children].forEach(c=>{ if(c.tagName!=="H3") pa.append(c); }); [...sick.children].forEach(c=>{ if(c.tagName!=="H3") pb.append(c); });
+      const ss=mkSeg("stSeg",[["u","🏖 Urlaub"],["k","🤒 Krank"]],"u",v=>{ st.dataset.v=v; }); ss.classList.remove("bigSeg"); st.dataset.v="u";
+      st.append(ss, pa, pb); vac.remove(); sick.remove(); sch ? sch.after(st) : wk.append(st); }
+    if(rem){ V92.rem=rem; v92Homed(rem); }
+  }
+  // Körper: Uhr und Sicherung ins Profil
+  const hc=$("hcCard"); if(hc) v92Homed(hc);
+  const bk=$("backup") && $("backup").closest("details"); if(bk){ V92.bk=bk; v92Homed(bk); }
+  // Heute: Schichtkarte wird kompakt
+  const shc=$("shiftTitle") && $("shiftTitle").closest(".card");
+  if(shc && !shc.classList.contains("shCard")){ shc.classList.add("shCard"); shc.id="shCard";
+    const body=el("div","shBody"), inner=el("div","shInner"); inner.append($("shiftPick"), $("wakeRow")); body.append(inner);
+    const sum=el("div","shSum"); const st=el("span","shSt"); st.id="shSt"; const tog=el("button","shTog"); tog.id="shTog"; tog.type="button"; tog.innerHTML='Ändern <span class="chev">⌄</span>';
+    tog.addEventListener("click",()=>{ V92.shOpen=!shc.classList.contains("open"); shc.classList.toggle("open",V92.shOpen); buzz(5); });
+    const cal=el("button","link shCal","📅 Ganzer Schichtkalender ›"); cal.addEventListener("click",()=>goOwner("woche", ()=>$("weekList") && $("weekList").closest(".card"), cal, {wk:"schicht"}));
+    inner.append(cal); sum.append(st, tog); shc.append(sum, body);
+    $("shiftPick").addEventListener("click",e=>{ if(!e.target.closest("button") || shc.classList.contains("noShift")) return; setTimeout(()=>{ V92.shOpen=false; shc.classList.remove("open"); },650); });
+  }
+  // Training: Bereiche
+  const tr=$("p-training"); if(tr){ const s=mkSeg("trSeg",[["plan","📋 Plan"],["fort","📈 Fortschritt"],["ueb","🏋️ Übungen"]],V92.tseg,(v,dir)=>{ V92.tseg=v; lsSet("wa_tseg",v); tr.dataset.seg=v; window.scrollTo(0,0); requestAnimationFrame(v92Post); if(v==="ueb"){ const d=$("progList") && $("progList").closest("details"); if(d) d.open=true; } segEnter(tr,"data-tseg",v,dir); }); tr.prepend(s); tr.dataset.seg=V92.tseg; }
+  // Lange Tour weg, kurze Hinweise statt dessen
+  startTour = function(i){ if(i===0){ state.hints92={}; persist(); render(); } };
+  const os=openSettings; openSettings=function(first){ os(first); try{ const pn=$("pane"); [...pn.querySelectorAll("button")].forEach(b=>{ if(/Kurze Tour/.test(b.textContent)) b.remove(); }); }catch(e){} };
+  const av=avoidSettings; avoidSettings=function(p){ if(p && p._avoidOk) return av(p); };
+  // Karten im Profil nach dem Schließen wieder sicher parken
+  try{ new MutationObserver(()=>v92Rescue()).observe($("pane"),{childList:true}); }catch(e){}
+  // Heute: Zahlen führen dorthin, wo sie wohnen
+  const he=$("hero"); if(he) he.addEventListener("click",e=>{ const tl=e.target.closest(".tile"); const sl=e.target.closest(".stepline");
+    if(tl){ const lb=(tl.querySelector(".label")||{}).textContent||""; if(/Schlaf/.test(lb)) goOwner("woche","#sleepCard",tl,{wk:"schlaf"}); else goOwner("koerper","#heartCard",tl); }
+    else if(sl) goOwner("koerper","#stepCard",sl); });
+}
+
+// ---------- Nach jedem Zeichnen
+function v92Post(){
+  v92Avatar(); injectInfos();
+  const wk=$("p-woche"), tr=$("p-training");
+  if(wk){ const calc=$("slOut") && $("slOut").closest(".card"), al=$("alarmCard"); if(al){ al.dataset.wseg="schlaf"; if(calc && calc.nextElementSibling!==al) calc.after(al); }
+    [...wk.querySelectorAll(":scope > .card")].forEach(c=>{ if(!c.dataset.wseg && !c.classList.contains("hint92")) c.dataset.wseg="schicht"; }); }
+  if(tr && typeof trLayoutDone!=="undefined" && trLayoutDone){
+    const all=[...tr.children]; const tag=(e,v)=>{ if(e && !e.dataset.tseg) e.dataset.tseg=v; };
+    let cur="plan"; all.forEach(e=>{ if(e.id==="trSeg" || e.classList.contains("hint92")) return; if(e.classList.contains("secLabel")){ const t=e.textContent; cur=/Fortschritt|Motivation/.test(t)?"fort":/Werkzeuge/.test(t)?"ueb":"plan"; if(!/Motivation/.test(t)) e.classList.add("secHide"); } tag(e,cur); });
+  }
+  // Heute: Schichtzeile
+  const shc=$("shCard"); if(shc){ const k=activeDay(), sh=state.shift[k]; const inp=$("wakeRow") && $("wakeRow").querySelector("input");
+    let tm=""; const pb=$("shiftPick") && $("shiftPick").querySelector('button[aria-pressed="true"]'); if(pb){ const m=pb.textContent.match(/(\d{1,2}) bis (\d{1,2})/); if(m) tm=m[1]+" bis "+m[2]+" Uhr"; }
+    const st=$("shSt"); if(st) st.textContent = sh ? [tm, inp && inp.value ? "auf seit "+inp.value : ""].filter(Boolean).join(" · ") : "Tippe an, welche Schicht du heute hast";
+    shc.classList.toggle("noShift", !sh); if(!sh) shc.classList.add("open"); else if(!V92.shOpen) shc.classList.remove("open"); }
+  ["wkSeg","trSeg","foodSeg","stSeg"].forEach(id=>segPill($(id)));
+  // Titel gleitet beim Wechsel
+  const pt=$("pageTitle"); if(pt && pt.dataset.last!==pt.textContent){ if(pt.dataset.last!=null && !RM){ pt.classList.remove("ttlIn"); void pt.offsetWidth; pt.classList.add("ttlIn"); } pt.dataset.last=pt.textContent; }
+  v92Hint(tab);
+}
+
 // ---------- Start
 (async function(){
   try{ const m=location.hash.match(/^#umzug=([A-Za-z0-9_-]+)/); if(m){ history.replaceState(null,"",location.pathname+location.search);
       if(!localStorage.getItem("winterplan") && window.DecompressionStream){ const b=atob(m[1].replace(/-/g,"+").replace(/_/g,"/")); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i);
         const txt=await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"))).text(); const o=JSON.parse(txt); Object.keys(o).forEach(k=>{ if(/^(winterplan|wa_[a-z]+)$/.test(k)) localStorage.setItem(k,o[k]); }); window.__moved=true; } } }catch(e){ console.error(e); }
   try{ layoutV63(); }catch(e){ console.error(e); }
+  try{ layoutV92(); }catch(e){ console.error(e); }
   await load();
   try{ fixMyRecipes(); }catch(e){}
   setTimeout(()=>alarmCheck(),2500);
