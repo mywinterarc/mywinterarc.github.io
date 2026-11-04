@@ -1128,6 +1128,21 @@ body:not([data-tab="training"]) .headR > div:has(> #weekLabel){display:none!impo
 .recipe tr{transition:opacity .25s ease}
 .recipe .macros.recChg{color:var(--accent);font-weight:700}
 .recipe table td:first-child{white-space:nowrap}
+/* v2.0.96 Zutaten anpassen */
+.recipe td.zn,.recipe td.num{cursor:pointer}
+.recipe td.zn small.zsub{display:block;font-size:11.5px;color:var(--accent);font-weight:700}
+.recipe tr.sub td.zn > span,.recipe tr.addz td.zn > span{color:var(--accent);font-weight:700}
+.recipe .zAdd{display:block;margin:6px 0 2px;font-weight:700}
+.recipe .recTip{margin:-2px 0 4px;font-size:12.5px}
+.pill.rmod{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);margin-left:6px}
+.ingHead{background:var(--bg);border-radius:14px;padding:10px 12px;margin-top:4px}
+.subList{display:flex;flex-direction:column;gap:8px}
+.subOpt{display:grid;grid-template-columns:1fr auto;column-gap:10px;row-gap:2px;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:11px 13px;color:var(--ink);animation:rise .4s var(--swift) both}
+.subOpt:nth-child(2){animation-delay:.04s}.subOpt:nth-child(3){animation-delay:.08s}.subOpt:nth-child(4){animation-delay:.12s}
+.subOpt b{font-size:15px}.subOpt .subAmt{font-weight:700;color:var(--accent);font-family:var(--mono,inherit)}
+.subOpt small{grid-column:1 / -1;color:var(--muted);font-size:12.5px}
+.subOpt:active{transform:scale(.98)}
+.ingNut summary{font-size:13.5px;color:var(--muted);cursor:pointer;margin:6px 0}
 </style>
 </head>
 <body>
@@ -2495,7 +2510,7 @@ const QUICK_SRC={"Protein Porridge":["porr",1],"Bolognese Box":["bolo",1],"Teriy
 function baseIngredients(f){
   const src=QUICK_SRC[f.n] || (f.rid ? [f.rid,1] : null); if(!src) return null;
   if(Array.isArray(src[0])) return src[0].map(([a,u,n])=>({a,u,n}));
-  let r=allRecipes().find(x=>x.id===src[0]); if(!r || !r.z) return null; { const o=recAdj(r).off; if(o.size) r=Object.assign({},r,{z:r.z.filter((_,i)=>!o.has(i))}); }
+  let r=allRecipes().find(x=>x.id===src[0]); if(!r || !r.z) return null; { if(recChanged(r)) r=Object.assign({},r,{z:recEff(r).filter(x=>!x.off).map(x=>[x.a,x.u,x.n,x.cat])}); }
   const rd=(v,u)=> PER100[u] ? Math.round(v) : u==="EL"||u==="TL" ? Math.round(v*2)/2 : Math.round(v*10)/10;
   const por=(state.recipePor||{})[r.id]||r.por;
   if(r.unit) return r.z.map(([a,u,n])=>({a:Math.round(a*src[1]/por*100)/100,u,n}));
@@ -6723,6 +6738,113 @@ function decorateRecipes(){
     [...d.querySelectorAll("button")].filter(b=>b.textContent==="Essen eintragen").forEach(b=>{ const nb=b.cloneNode(true); b.replaceWith(nb); nb.onclick=()=>openFoodItem(activeDay(),{n:r.n,kcal:m.kcal,p:m.p,c:m.c,f:m.f,rid:r.id}); });
   });
 }
+
+// v2.0.96: Rezepte anpassen. Zutat ersetzen, Menge ändern, weglassen, eigene dazu.
+Object.assign(ING, {"Sprudelwasser":[0,0,0,0],"Sprite Zero":[1,0,0.1,0],"Zucker":[400,0,100,0],"Xylit":[240,0,100,0],"Vanillezucker":[400,0,100,0],"Weizenmehl 405":[340,10,72,1],"Weizenmehl 550":[340,11,71,1.2],"Sonnenblumenöl":[828,0,0,92],"Butter":[740,0.7,0.6,82],"Frischkäse Doppelrahm (Philadelphia)":[235,5.4,4.3,21.5],"Gehacktes gemischt":[260,17,0,21],"Möhren":[25,0.6,5,0.1],"Chili Beans":[330,19,45,4],"Weiße Bohnen":[220,17,32,1],"Natron":[0,0,0,0],"Honig":[304,0.4,80,0]});
+// Ersatz: [Muster, [[neu, Faktor, Hinweis, Einheit]]]
+const SUBS=[
+  [/fanta|cola zero|limo/i,[["Sprudelwasser",1,"gleich luftig, ohne Orange"],["Sprite Zero",1,"luftig, Zitrone"],["Milch",1,"saftiger, etwas mehr kcal"],["Wasser",1,"etwas kompakter"]]],
+  [/sprudel|mineralwasser/i,[["Wasser",1,"etwas kompakter, Eischnee hilft"],["Milch",1,"saftiger, etwas mehr kcal"]]],
+  [/sahneprotein|proteinpulver|casein|kasein/i,[["Whey",1,"etwas trockener, Flüssigkeit eher mehr"],["Skyr",2.5,"saftiger, dafür weniger Flüssigkeit"],["Dinkelmehl Type 630",0.7,"kein Proteinkuchen mehr, aber klappt"]]],
+  [/flavor/i,[["Vanillezucker",1,"normale Süße und Vanille"],["Zimt",0.3,"würzig statt Vanille"]]],
+  [/erythrit/i,[["Zucker",0.7,"süßt stärker, deutlich mehr kcal"],["Xylit",1,"gleich süß, etwas mehr kcal"]]],
+  [/rapsol|sonnenblumenol|\bol\b/i,[["Sonnenblumenöl",1,"gleich"],["Butter",1.2,"mehr Geschmack, schmelzen"]]],
+  [/dinkelmehl|\bmehl\b/i,[["Weizenmehl 405",1,"gleich, etwas weicher"],["Weizenmehl 550",1,"gleich"]]],
+  [/frischkase/i,[["Frischkäse light",1,"etwas mehr kcal"],["Frischkäse Doppelrahm (Philadelphia)",1,"cremig, deutlich mehr kcal"],["Skyr",1,"frischer, flüssiger"]]],
+  [/rinderhack|hackfleisch|\bhack\b/i,[["Gehacktes gemischt",1,"günstiger, mehr Fett"],["Hähnchenbrust",1,"mager, klein schneiden"]]],
+  [/zucchini/i,[["Paprika",1,"gleich viel Stück"],["Möhren",2,"süßlicher"]]],
+  [/paprika/i,[["Zucchini",1,"gleich viel Stück"],["Möhren",2,"süßlicher"]]],
+  [/kidney/i,[["Chili Beans",1,"schon gewürzt"],["Weiße Bohnen",1,"milder"]]],
+  [/gehackte tomaten|stuckige tomaten/i,[["Passierte Tomaten",400,"glatter","g"]]],
+  [/backpulver/i,[["Natron",0.3,"plus 1 EL Zitronensaft dazu"]]],
+  [/\bmais\b/i,[["Weiße Bohnen",1,"mehr Eiweiß"]]]
+];
+function subsFor(n, a, u){
+  const out=[]; const seen=new Set();
+  (ALT[n]||[]).forEach(([to,bs])=>{ if(seen.has(to)) return; seen.add(to); out.push({n:to, a:altAmount(n,to,a,bs), u, note: bs==="p"?"gleich viel Eiweiß":bs==="kcal"?"gleich viele kcal":"gleiche Menge"}); });
+  const t=normTxt(n); SUBS.forEach(([re,l])=>{ if(!re.test(t) && !re.test(n)) return; l.forEach(([to,f,note,uu])=>{ if(seen.has(to) || to===n) return; seen.add(to); const v=a*f; out.push({n:to, a: uu ? Math.round(v/10)*10 : (v>=20?Math.round(v/5)*5:Math.round(v*10)/10), u:uu||u, note}); }); });
+  return out;
+}
+// Wirksame Zutatenliste, Mengen für 1×
+function recEff(r){
+  const sub=((state.recSub||{})[r.id])||{}, add=((state.recAdd||{})[r.id])||[], {off}=recAdj(r);
+  const L=(r.z||[]).map((z,i)=>{ const s=sub[i]; return s ? {i, a:s[0], u:s[1], n:s[2], cat:z[3], orig:z, sub:true, off:off.has(i)} : {i, a:z[0], u:z[1], n:z[2], cat:z[3], off:off.has(i)}; });
+  add.forEach((z,k)=>L.push({i:"a"+k, k, a:z[0], u:z[1], n:z[2], cat:"Eigenes", add:true, off:false}));
+  return L;
+}
+function recChanged(r){ const id=r.id; return !!((state.recScale||{})[id] || ((state.recOff||{})[id]||[]).length || Object.keys((state.recSub||{})[id]||{}).length || ((state.recAdd||{})[id]||[]).length); }
+recZ = function(r){ const {s}=recAdj(r); return recEff(r).filter(x=>!x.off).map(x=>[x.a*s, x.u, x.n, x.cat]); };
+recMacros = function(r){ const b=recBase(r); const id=r.id; if(!(((state.recOff||{})[id]||[]).length || Object.keys((state.recSub||{})[id]||{}).length || ((state.recAdd||{})[id]||[]).length)) return b;
+  const now=sumIng(recEff(r).filter(x=>!x.off).map(x=>({a:x.a,u:x.u,n:x.n}))), was=sumIng(r.z.map(([a,u,n])=>({a,u,n}))); const d=(k,ix)=>Math.max(0,Math.round(b[k]+(now[ix]-was[ix])/b.por)); return {kcal:d("kcal",0),p:d("p",1),c:d("c",2),f:d("f",3),por:b.por}; };
+recipeCost = function(r){ const {s}=recAdj(r); const rows=recEff(r).map(x=>({n:x.n, off:x.off, c:ingCost(x.a*s,x.u,x.n)})); const have=rows.filter(x=>x.c && !x.off); if(!have.length) return null; const tot=have.reduce((t,x)=>t+x.c.eur,0); const por=(((state.recipePor||{})[r.id])||r.por||1)*s; return {tot, per:tot/por, por, rows, miss:rows.filter(x=>!x.c && !x.off).map(x=>x.n)}; };
+function setSub(r,i,v){ state.recSub=state.recSub||{}; const m=state.recSub[r.id]||{}; if(v) m[i]=v; else delete m[i]; if(Object.keys(m).length) state.recSub[r.id]=m; else delete state.recSub[r.id]; }
+function setOff(r,i,on){ state.recOff=state.recOff||{}; const L=new Set(state.recOff[r.id]||[]); if(on) L.add(i); else L.delete(i); if(L.size) state.recOff[r.id]=[...L].sort((x,y)=>x-y); else delete state.recOff[r.id]; }
+function openIngEdit(r, x){
+  const {s}=recAdj(r); const isAdd=!x; const cur = x || {a:"", u:"g", n:""};
+  const orig = x && (x.sub ? x.orig : x.add ? null : [x.a,x.u,x.n]);
+  openSheet(p=>{
+    sheetHead(p, isAdd ? "Zutat dazu" : "Zutat anpassen");
+    if(!isAdd){ const hd=el("div","ingHead"); hd.append(el("b",null,fmtAmt(cur.a*s)+" "+cur.u+" "+cur.n)); if(x.sub) hd.append(el("div","note","statt "+fmtAmt(orig[0]*s)+" "+orig[1]+" "+orig[2])); p.append(hd); }
+    const done=msg=>{ persist(); closeSheet(); renderRecipes(); buzz(8); if(msg) toast(msg); };
+    if(!isAdd && !x.add){ const base=orig; const sg=subsFor(base[2], base[0], base[1]);
+      if(sg.length){ p.append(el("div","cat","Nicht da? Ersetzen durch")); const box=el("div","subList");
+        sg.forEach(o=>{ const b=el("button","subOpt"); b.append(el("b",null,o.n), el("span","subAmt",fmtAmt(o.a*s)+" "+o.u), el("small",null,o.note)); b.onclick=()=>{ setSub(r,x.i,[o.a,o.u,o.n]); setOff(r,x.i,false); done(base[2]+" → "+o.n); }; box.append(b); }); p.append(box); } }
+    p.append(el("div","cat", isAdd ? "Was kommt dazu?" : "Etwas anderes oder Menge ändern"));
+    const nl=el("label","f","Zutat"), ni=el("input"); ni.type="text"; ni.value=cur.n; ni.setAttribute("list","ingNames"); nl.append(ni);
+    let dl=$("ingNames"); if(!dl){ dl=el("datalist"); dl.id="ingNames"; document.body.append(dl); } dl.innerHTML=""; Object.keys(ING).concat(Object.keys(state.myIng||{})).sort((a,b)=>a.localeCompare(b,"de")).forEach(k=>{ const o=el("option"); o.value=k; dl.append(o); });
+    const g=el("div","grid2"); const [la,ia]=field("Menge"+(s!==1?" (bei "+fmtAmt(s)+"×)":""),"number", cur.a!=="" ? Math.round(cur.a*s*10)/10 : ""); const lu=el("label","f","Einheit"), su=el("select"); ["g","ml","Stk","EL","TL","Prise","Dose","Dosen","Pck"].forEach(v=>{ const o=el("option",null,v); o.value=v; su.append(o); }); if(![...su.options].some(o=>o.value===cur.u)){ const o=el("option",null,cur.u); o.value=cur.u; su.append(o); } su.value=cur.u; lu.append(su); g.append(la,lu); p.append(nl,g);
+    const nd=el("details","ingNut"); nd.append(el("summary",null,"Nährwerte je 100 g, falls die App sie nicht kennt")); const g4=el("div","grid4"); const nf=["kcal","Eiweiß","Kohlenh.","Fett"].map(l=>{ const [lab,i]=field(l,"number",""); g4.append(lab); return i; }); nd.append(g4); p.append(nd);
+    const hint=el("div","note"); const upd=()=>{ const n=ni.value.trim(); const k=!!(ING[n]||(state.myIng||{})[n]); hint.textContent = !n ? "" : k ? "✓ Nährwerte bekannt, werden mitgerechnet." : "Unbekannt: ohne Nährwerte unten wird sie nicht mitgerechnet."; nd.hidden=k; }; ni.addEventListener("input",upd); upd(); p.append(hint);
+    const ok=el("button","btn wide", isAdd ? "Dazu" : "Übernehmen"); ok.onclick=()=>{
+      const n=ni.value.trim(), a=num(ia.value); if(!n || !(a>0)){ toast("Zutat und Menge eintragen"); return; }
+      const v=nf.map(i=>num(i.value)); if(!ING[n] && v[0]>=0 && v.some(z=>z>0)){ state.myIng=state.myIng||{}; state.myIng[n]=v.map(z=>z>0?z:0); }
+      const val=[a/s, su.value, n];
+      if(isAdd){ state.recAdd=state.recAdd||{}; (state.recAdd[r.id]=state.recAdd[r.id]||[]).push(val); done(n+" dazu"); return; }
+      if(x.add){ state.recAdd[r.id][x.k]=val; done("Geändert"); return; }
+      const same = orig && n===orig[2] && su.value===orig[1] && Math.abs(a/s-orig[0])<1e-9; setSub(r,x.i, same?null:val); setOff(r,x.i,false); done(same?null:"Geändert"); };
+    p.append(ok);
+    const row=el("div","row");
+    if(!isAdd && x.add){ const del=el("button","btn ghost small","Entfernen"); del.onclick=()=>{ state.recAdd[r.id].splice(x.k,1); if(!state.recAdd[r.id].length) delete state.recAdd[r.id]; done(cur.n+" entfernt"); }; row.append(del); }
+    if(!isAdd && !x.add){ const off=el("button","btn ghost small", x.off?"Wieder rein":"Weglassen"); off.onclick=()=>{ setOff(r,x.i,!x.off); done(x.off?null:cur.n+" weggelassen"); }; row.append(off);
+      if(x.sub){ const og=el("button","btn ghost small","Wie im Original"); og.onclick=()=>{ setSub(r,x.i,null); done("Wieder "+orig[2]); }; row.append(og); } }
+    if(row.children.length) p.append(row);
+  }, "ingEdit");
+}
+decorateRecipes = function(){
+  const box=$("recipes"); if(!box) return; const list=allRecipes();
+  box.querySelectorAll("details.recipe").forEach(d=>{
+    if(d.dataset.dec) return; d.dataset.dec="1"; const sp=d.querySelector(".rhead > div > span"); const nm=sp && sp.firstChild && sp.firstChild.textContent; const r=list.find(x=>x.n===nm); if(!r || !r.z) return;
+    const {s}=recAdj(r), m=recMacros(r), P=m.por*s, changed=recChanged(r), eff=recEff(r);
+    const mac=d.querySelector(".macros"); if(mac){ const ptxt = r.box ? fmtAmt(P)+" Boxen, je Box: " : r.unit ? fmtAmt(P)+" "+r.unit+"e, je "+r.unit+": " : P===1 ? "1 Portion: " : fmtAmt(P)+" Portionen, je Portion: "; mac.textContent=ptxt+macroTxt(m); if(changed){ mac.classList.add("recChg"); sp.append(el("span","pill rmod","angepasst")); } }
+    const c=recipeCost(r); if(mac && c) mac.after(el("div","rcost","💶 "+eur(c.per)+" pro "+(r.box?"Box":r.unit||"Portion")+" · "+eur(c.tot)+" gesamt"));
+    const tools=el("div","recTools"); const sg=el("div","seg recSeg"); [[0.5,"½"],[1,"1×"],[1.5,"1½"],[2,"2×"]].forEach(([v,l])=>{ const b=el("button",null,l); b.type="button"; b.setAttribute("aria-pressed", v===s?"true":"false"); b.onclick=()=>{ state.recScale=state.recScale||{}; if(v===1) delete state.recScale[r.id]; else state.recScale[r.id]=v; persist(); buzz(5); renderRecipes(); }; sg.append(b); });
+    tools.append(el("span","label","Menge"), sg);
+    if(changed){ const rs=el("button","link","↺ Original"); rs.onclick=()=>{ ["recScale","recOff","recSub","recAdd"].forEach(k=>{ if(state[k]) delete state[k][r.id]; }); persist(); renderRecipes(); toast("Rezept wieder wie im Original"); }; tools.append(rs); }
+    const tb=d.querySelector("table"); if(tb){ tb.before(tools); tb.before(el("div","note recTip","Zutat antippen zum Ersetzen oder Ändern. × lässt sie weg.")); }
+    const body=d.querySelector("table tbody"); if(body){ body.innerHTML=""; eff.forEach((x,j)=>{ const tr=el("tr", (x.off?"off ":"")+(x.sub?"sub ":"")+(x.add?"addz":"")); const cr=c && c.rows[j];
+      const nt=el("td","zn"); nt.append(el("span",null,x.n)); if(x.sub) nt.append(el("small","zsub","statt "+x.orig[2])); if(x.add) nt.append(el("small","zsub","dazu")); nt.onclick=()=>openIngEdit(r,x);
+      const at=el("td","num",fmtAmt(x.a*s)+" "+x.u); at.onclick=()=>openIngEdit(r,x);
+      tr.append(at, nt, el("td","num rc", cr && cr.c && !x.off ? eur(cr.c.eur) : ""));
+      const xb=el("button","zx",x.off?"↺":"×"); xb.type="button"; xb.setAttribute("aria-label",(x.off?"Wieder rein: ":"Weglassen: ")+x.n);
+      xb.onclick=()=>{ if(x.add){ state.recAdd[r.id].splice(x.k,1); if(!state.recAdd[r.id].length) delete state.recAdd[r.id]; persist(); renderRecipes(); toast(x.n+" entfernt"); return; }
+        setOff(r,x.i,!x.off); persist(); buzz(6); renderRecipes(); if(!x.off) toast(x.n+" weggelassen", ()=>{ setOff(r,x.i,false); persist(); renderRecipes(); }, "Rückgängig"); };
+      const td=el("td","zxc"); td.append(xb); tr.append(td); body.append(tr); }); }
+    const addB=el("button","link zAdd","+ Zutat dazu"); addB.onclick=()=>openIngEdit(r,null); if(tb) tb.after(addB);
+    const notes=el("div","rcostSum"); let any=false;
+    if(c){ notes.append(el("b",null,"Gekauft für dieses Rezept: "+eur(c.tot)+" · "+eur(c.per)+" pro "+(r.box?"Box":r.unit||"Portion"))); if(c.miss.length) notes.append(el("div","note","Ohne Preis, nicht mitgerechnet: "+c.miss.join(", ")+".")); any=true; }
+    const offN=eff.filter(x=>x.off).map(x=>x.n), subN=eff.filter(x=>x.sub && !x.off).map(x=>x.orig[2]+" → "+x.n), addN=eff.filter(x=>x.add).map(x=>x.n);
+    if(offN.length){ notes.append(el("div","note","Weggelassen: "+offN.join(", ")+".")); any=true; }
+    if(subN.length){ notes.append(el("div","note","Ersetzt: "+subN.join(", ")+".")); any=true; }
+    if(addN.length){ notes.append(el("div","note","Dazu: "+addN.join(", ")+".")); any=true; }
+    const unk=eff.filter(x=>!x.off && (x.sub||x.add) && !ING[x.n] && !(state.myIng||{})[x.n]).map(x=>x.n); if(unk.length){ notes.append(el("div","note","Ohne Nährwerte, nicht mitgerechnet: "+unk.join(", ")+". Antippen und Werte je 100 g eintragen.")); any=true; }
+    if(changed && (offN.length||subN.length||addN.length)){ notes.append(el("div","note","Nährwerte oben sind schon mit deinen Änderungen gerechnet.")); any=true; }
+    if(s!==1){ notes.append(el("div","note", s<1 ? "Kleinere Form oder Topf nehmen. Garzeit wird eher kürzer, früher prüfen." : "Größere Form oder zwei Bleche. Garzeit wird eher länger.")); any=true; }
+    if(any) addB.after(notes);
+    const subs=eff.filter(x=>x.sub && !x.off);
+    d.querySelectorAll("ol.steps li").forEach(li=>{ let t=li.textContent; subs.forEach(x=>{ const o=x.orig[2]; const w0=o.split(/[\s(]/)[0].replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); t=t.replace(new RegExp("(\\d+(?:[.,]\\d+)?)(\\s*(?:"+REC_U+")\\s+)(?="+w0+")","gu"),(mm,n0)=> Math.abs(num(n0)-x.orig[0])<1e-6 ? fmtAmt(x.a)+" "+x.u+" " : mm); t=t.split(o).join(x.n); const w=o.split(/[\s(]/)[0]; if(w.length>=5 && w!==x.n.split(/[\s(]/)[0]) t=t.replace(new RegExp("(^|[^\\p{L}])"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(?![\\p{L}])","gu"),(mm,pre)=>pre+x.n); }); if(s!==1) t=scaleTxt(t,s); li.textContent=t; });
+    [...d.querySelectorAll("button")].filter(b=>b.textContent==="Essen eintragen").forEach(b=>{ const nb=b.cloneNode(true); b.replaceWith(nb); nb.onclick=()=>openFoodItem(activeDay(),{n:r.n,kcal:m.kcal,p:m.p,c:m.c,f:m.f,rid:r.id}); });
+  });
+};
 
 // ---------- Start
 (async function(){
