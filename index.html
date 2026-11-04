@@ -873,6 +873,47 @@ body[data-tab="training"]::before{filter:hue-rotate(140deg)}body[data-tab="essen
 .stBar i{display:block;height:100%;background:var(--accent);border-radius:99px}
 .stBar i.ok{background:var(--done)}
 #stepExtra .wstats{grid-template-columns:1fr 1fr}
+/* ===== Training aufgehübscht */
+.trMain{padding-top:12px}
+.trHide{display:none}
+.trHero{position:relative;margin:-2px -4px 12px;padding:16px;border-radius:22px;color:#fff;overflow:hidden;
+  background:radial-gradient(120% 140% at 100% 0%,color-mix(in srgb,var(--accent) 85%,#fff 0%) 0%,transparent 55%),linear-gradient(135deg,color-mix(in srgb,var(--accent) 92%,#000) 0%,color-mix(in srgb,var(--accent) 55%,#0b1a2a) 100%);
+  box-shadow:0 10px 28px color-mix(in srgb,var(--accent) 35%,transparent)}
+.trHero::after{content:"🏋️";position:absolute;right:-8px;bottom:-14px;font-size:96px;opacity:.12;transform:rotate(-14deg);pointer-events:none}
+.trTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.trLab{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.trTitle{font-size:24px;font-weight:900;line-height:1.15;margin:2px 0 4px}
+.trNote{font-size:13px;opacity:.88;line-height:1.35}
+.trRing{width:68px;flex:none}.trRing svg circle:first-child{stroke:rgba(255,255,255,.25)!important}
+.trChips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.trChip{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.trBtns{margin-top:12px;display:grid!important;grid-template-columns:1.4fr 1fr;gap:8px}
+.trBtns .btn{width:100%;justify-content:center}
+.trBtns .btn:not(.ghost){background:#fff!important;color:#111!important;font-weight:900;box-shadow:0 6px 18px rgba(0,0,0,.2)}
+.trBtns .btn.ghost{background:rgba(255,255,255,.16)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important}
+.trBtns .btn.ghost:nth-child(n+3){font-size:13px;padding:8px}
+.trMain #streakLine{margin-bottom:4px}
+.trMain #trainWarn .alert{font-size:13px;padding:9px 12px;border-radius:14px}
+.trMain .seq span{border-radius:12px;font-weight:800}
+.trMain .seq span.cur{background:var(--accent);color:#fff;box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 45%,transparent)}
+.trListHead{display:flex;justify-content:space-between;align-items:baseline;margin:14px 2px 6px;font-weight:800}
+#unitList .ex{position:relative;border-radius:16px;background:var(--bg);padding:10px 10px 10px 12px;margin:6px 0;border:0!important}
+#unitList .ex .exNo{position:absolute;left:-6px;top:-6px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:900;display:grid;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.25);z-index:1}
+#unitList .ex .expic{width:52px;height:52px;border-radius:12px}
+#unitList .ex .nm{font-size:15px;line-height:1.25}
+#unitList .ex .last{font-size:12px}
+#unitList .ex .hint.goal{font-size:13px;font-weight:800}
+#unitList .ex .sr{font-size:12px}
+.secLabel{font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 6px 6px}
+#unitList .ex{display:grid!important;grid-template-columns:52px minmax(0,1fr);column-gap:12px;align-items:start}
+#unitList .ex .exR{grid-column:1/-1;display:flex!important;justify-content:space-between;align-items:center;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);text-align:left}
+#unitList .ex .exR .sr{font-weight:800}
+.trBtns .btn{font-size:15px}
+.trHero{margin-top:-4px}
+#unitList .ex .exR{flex-direction:row!important}
+#unitList .ex .exR .row{margin:0;gap:14px}
+.trHero > *{position:relative;z-index:1}
+.trHero::after{z-index:0;opacity:.09;right:auto;left:55%;bottom:auto;top:30%}
 
 :root{--mzb:color-mix(in srgb,var(--ink) 9%,var(--panel));--mz0:color-mix(in srgb,var(--ink) 20%,var(--panel))}
 .sheet{z-index:96}.toast{z-index:160}
@@ -1969,7 +2010,7 @@ function widgetPush(){ clearTimeout(widgetT); widgetT=setTimeout(async ()=>{ try
   const js=JSON.stringify(Object.assign({},data,{u:0})); if(js===widgetLast) return; widgetLast=js;
   await Prefs.set({key:"widget", value:JSON.stringify(data)}); const WB=plug("WidgetBridge"); if(WB && WB.update) await WB.update();
 }catch(e){} }, 1500); }
-function render(){ try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
+function render(){ try{ requestAnimationFrame(()=>{ try{ decorateTraining(); }catch(e){ console.error(e); } }); }catch(e){} try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
   applyPlan(); applyTheme(); STEP_GOAL = Number(P().stepGoal)||8000; widgetPush(); setTimeout(checkBadges, 50);
   const k = activeDay(), w = planWeek(k), ph = phase(w);
   $("dateLabel").textContent = (P().name ? "Hi "+P().name+" · " : "") + parseKey(k).toLocaleDateString("de-DE",{weekday:"long", day:"numeric", month:"long"}) + (k!==calToday() ? " · Schicht läuft noch" : "");
@@ -6179,6 +6220,48 @@ function renderStepsExtra(){
     const bar=el("span","stBar"); const fill=el("i"); fill.style.width=pct+"%"; if(v>=STEP_GOAL) fill.classList.add("ok"); bar.append(fill);
     r.append(el("span","nd",d===k?"Heute":dd.toLocaleDateString("de-DE",{weekday:"short"}).replace(".","")+" "+dd.getDate()+"."+(dd.getMonth()+1)+"."), bar, el("b","nv"+(v>=STEP_GOAL?" ok":""),de(v)), el("span","chev","›")); r.onclick=()=>openStepsDay(d); ul.append(r); });
   box.append(ul);
+}
+
+
+// v2.0.90: Training Tab aufgehübscht: Kopfbereich mit Einheit, Dauer, Muskeln und Wochenring, kompakte Übungen, Abschnitte
+const PK_MUSCLE={schraeg:"Brust",flach:"Brust",fly:"Brust",rudBrust:"Rücken",rudKabel:"Rücken",latEng:"Rücken",latWeit:"Rücken",seit:"Schultern",face:"Schultern",schulter:"Schultern",triOver:"Trizeps",triPush:"Trizeps",bizeps:"Bizeps",hammer:"Bizeps",preacher:"Bizeps",bayes:"Bizeps",quad:"Beine",presse:"Beine",strecker:"Beine",beugerSitz:"Beinbeuger",beugerLieg:"Beinbeuger",einbein:"Beine",adduktor:"Beine",hinge:"Po",hyper:"Po",wadeSteh:"Waden",wadeSitz:"Waden",bauch:"Bauch",cardio:"Cardio"};
+const MUSCLE_EMO={Brust:"🫁",Rücken:"🪽",Schultern:"🎯",Trizeps:"💪",Bizeps:"💪",Beine:"🦵",Beinbeuger:"🦵",Po:"🍑",Waden:"🦶",Bauch:"🧱",Cardio:"🫀"};
+function weekTrainCount(){ const k=calToday(), d0=parseKey(k); const dow=(d0.getDay()+6)%7, mon=addDays(k,-dow); return state.train.log.filter(e=>e.d>=mon && e.d<=k && e.u!=="P" && !e.skip).length; }
+let trLayoutDone=false;
+function trLayout(){
+  if(trLayoutDone) return; const sec=$("p-training"); if(!sec) return; trLayoutDone=true;
+  const card=sec.querySelector(".card.focus"); const lab=(t,before)=>{ if(!before) return; const l=el("div","secLabel",t); before.before(l); };
+  const yr=[...sec.querySelectorAll(":scope > .card")].find(c=>/Dein Jahr/.test(c.textContent.slice(0,80)));
+  const mus=[...sec.querySelectorAll(":scope > .card")].find(c=>/Muskelverteilung/.test(c.textContent.slice(0,80)));
+  const all=$("progList") && $("progList").closest(".card"), warm=[...sec.querySelectorAll(":scope > .card")].find(c=>/Schulter Aufwärmen/.test(c.textContent.slice(0,80)));
+  // Reihenfolge: Einheit, Woche, Ziele, Fortschritt, Motivation, Werkzeuge
+  const order=[card, $("weekStripCard"), $("actCard"), $("goalCard"), $("recCard"), $("strengthCard"), $("setsWeekCard"), mus, yr, $("studioCard"), all, warm, $("rulesCard")].filter(Boolean);
+  let a=card; order.slice(1).forEach(c=>{ a.after(c); a=c; });
+  lab("📅 Diese Woche", $("weekStripCard")); lab("📈 Fortschritt", $("goalCard")); lab("🔥 Motivation", yr); lab("🧰 Werkzeuge und Wissen", all);
+  // Alle Übungen einklappbar
+  if(all && !all.querySelector("details")){ const h=all.querySelector("h3"), pl=$("progList"); const d=el("details"); const sm=el("summary"); sm.append(document.createTextNode("📋 Alle Übungen "), el("span","note","Verlauf je Übung")); d.append(sm); h.remove(); pl.before(d); d.append(pl); }
+}
+function decorateTraining(){
+  try{ trLayout(); }catch(e){ console.error(e); }
+  const card=document.querySelector("#p-training .card.focus"); if(!card || !$("unitTitle")) return;
+  card.classList.add("trMain");
+  let hero=$("trHero"); const tit=$("unitTitle"), nextBox=tit.parentElement;
+  if(!hero){ hero=el("div","trHero"); hero.id="trHero"; card.prepend(hero); }
+  nextBox.classList.add("trHide");
+  const k=activeDay(); let u=null; try{ u=SEQ[state.train.idx % SEQ.length]; }catch(e){}
+  [...hero.children].forEach(c=>{ if(c.id!=="unitBtns") c.remove(); });
+  const top=el("div","trTop"); const left=el("div"); left.append(el("div","trLab","Heute dran"), el("div","trTitle",tit.textContent), el("div","trNote",($("unitNote")||{}).textContent||""));
+  const pw=(curPlan()&&curPlan().pw)||4, done=weekTrainCount(); const ring=el("div","trRing"); ring.innerHTML=ringSVG(Math.min(1,done/pw),"#fff",'<text x="32" y="31" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">'+done+'/'+pw+'</text><text x="32" y="43" text-anchor="middle" font-size="7.5" font-weight="700" fill="rgba(255,255,255,.8)">Woche</text>');
+  top.append(left, ring); hero.append(top);
+  const chips=el("div","trChips");
+  const durNote=[...card.querySelectorAll("#unitList .note.num")].map(x=>x.textContent).join(" "); const m=durNote.match(/ca\.\s*(\d+)\s*Min\.\s*\((\d+)\s*Sätze/);
+  if(m){ chips.append(el("span","trChip","⏱ "+m[1]+" Min."), el("span","trChip","🏋️ "+m[2]+" Sätze")); }
+  if(u && UNITS[u] && u!=="P"){ const ms=[...new Set(UNITS[u].s.map(([pk])=>PK_MUSCLE[pk]).filter(Boolean))]; ms.slice(0,5).forEach(x=>chips.append(el("span","trChip",(MUSCLE_EMO[x]||"")+" "+x))); }
+  hero.append(chips);
+  const btns=$("unitBtns"); if(btns){ hero.append(btns); btns.classList.add("trBtns"); }
+  // Übungen nummerieren
+  [...card.querySelectorAll("#unitList .ex")].forEach((x,i)=>{ if(!x.querySelector(".exNo")){ const n=el("span","exNo",String(i+1)); x.prepend(n); } });
+  const ul=$("unitList"); if(ul && !ul.previousElementSibling?.classList?.contains("trListHead")){ const hd=el("div","trListHead"); hd.append(el("span",null,"Übungen"), el("span","note",card.querySelectorAll("#unitList .ex").length+" Stück · Tippe Sätze oder Tauschen")); ul.before(hd); }
 }
 
 // ---------- Start
