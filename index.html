@@ -1106,6 +1106,15 @@ body:not([data-tab="training"]) .headR > div:has(> #weekLabel){display:none!impo
 #pane[data-kind="homed"] > .card > h3:first-child,#pane[data-kind="homed"] > .card > .between:first-child > h3{display:none}
 #pane[data-kind="homed"] > details > summary{display:none}
 .shCard .shCal{display:block;margin-top:10px;font-weight:700}
+/* v2.0.94 Preise */
+.recipe .rcost{font-size:13px;font-weight:700;color:var(--accent);margin-top:2px}
+.recipe td.rc{text-align:right;color:var(--muted);font-size:13px;white-space:nowrap}
+.recipe tr.noPrice td{opacity:.55}
+.recipe .rcostSum{background:var(--bg);border-radius:12px;padding:10px 12px;margin:8px 0}
+.recipe .rcostSum b{font-size:14px}
+#priceCard .prow{cursor:pointer}
+#priceCard .pr{display:flex;flex-direction:column;align-items:flex-end;flex:0 0 auto}
+#priceCard .pr small{color:var(--muted);font-size:12px}
 </style>
 </head>
 <body>
@@ -6582,6 +6591,96 @@ function v92Post(){
   const pt=$("pageTitle"); if(pt && pt.dataset.last!==pt.textContent){ if(pt.dataset.last!=null && !RM){ pt.classList.remove("ttlIn"); void pt.offsetWidth; pt.classList.add("ttlIn"); } pt.dataset.last=pt.textContent; }
   v92Hint(tab);
 }
+
+// v2.0.94: Preise. Was du gekauft hast, mit Packung und Preis. Rezepte rechnen nur damit, was eine Portion kostet.
+const PRICE_SEED = [
+  ["Hackfleisch gemischt","hackfleisch|rinderhack|schweinehack|hackepeter|\\bhack",400,"g",3.79],
+  ["Haferflocken zart","haferflocken|haferfl",500,"g",0.85],
+  ["Skyr","skyr",350,"g",0.99],
+  ["Milch 1,5 %","\\bmilch\\b",1000,"ml",0.85],
+  ["Kidneybohnen","kidney|rote bohnen",1,"Dose",0.69,255],
+  ["Chili Beans","chili beans",1,"Dose",0.99,400],
+  ["Tomaten stückig","gehackte tomaten|tomaten stuckig|stuckige tomaten|tomaten gehackt",1,"Dose",1.00,400],
+  ["Passierte Tomaten","passierte tomaten|passata",500,"g",0.65],
+  ["Goldmais","\\bmais\\b|goldmais",1,"Dose",1.79,285],
+  ["Lasagneplatten","lasagneplatten|lasagne platten",500,"g",1.19],
+  ["Dinkelmehl","dinkelmehl|\\bmehl\\b",1000,"g",1.09],
+  ["Eier","\\beier\\b|\\bei\\b",6,"Stk",2.89,60],
+  ["Philadelphia Frischkäse","frischkase",195,"g",1.83],
+  ["Körniger Frischkäse","huttenkase|korniger frischkase|cottage",300,"g",1.79],
+  ["Gouda jung","gouda|geriebener kase|reibekase|\\bkase\\b",400,"g",2.45],
+  ["Erythrit mit Inulin","erythrit",500,"g",3.65],
+  ["Obst sortiert","beeren|\\bobst\\b",500,"g",3.29],
+  ["Bananen","banane",1000,"g",1.29],
+  ["Körner Sandwich Toast","toast|sandwich",750,"g",1.19],
+  ["Schokolade 74 %","schokolade|zartbitter",100,"g",1.89]
+];
+function prices(){ if(!state.prices){ state.prices = PRICE_SEED.map(([n,kw,amt,u,eur,gpu],i)=>({id:"p"+i, n, kw, amt, u, eur, gpu:gpu||null, src:"Netto, 4. Nov."})); } return state.prices; }
+function priceFor(name){
+  const t=normTxt(name); let best=null, bl=0;
+  prices().forEach(p=>{ let m=null; try{ m=t.match(new RegExp(p.kw||normTxt(p.n))); }catch(e){ m=t.includes(normTxt(p.n))?[normTxt(p.n)]:null; } if(m && m[0].length>bl){ best=p; bl=m[0].length; } });
+  return best;
+}
+const CNT_U=/^(stk|stück|dose|dosen|packung|pck|becher|glas|gläser|flasche|beutel)$/i;
+function ingCost(a,u,n){
+  const p=priceFor(n); if(!p || !(a>0) || !(p.eur>=0) || !(p.amt>0)) return null;
+  const uu=String(u||"").trim().toLowerCase(); let g=null, c=null;
+  if(uu==="g"||uu==="ml") g=a; else if(uu==="kg"||uu==="l") g=a*1000; else if(uu==="el") g=a*15; else if(uu==="tl") g=a*5; else if(CNT_U.test(uu)||uu==="") c=a;
+  const pc = p.u==="Stk"||p.u==="Dose";
+  if(!pc && g!=null) return {p, eur:p.eur*g/p.amt};
+  if(pc && c!=null) return {p, eur:p.eur*c/p.amt};
+  if(pc && g!=null && p.gpu) return {p, eur:p.eur*(g/p.gpu)/p.amt};
+  return null;
+}
+function recipeCost(r){
+  const rows=(r.z||[]).map(([a,u,n])=>({n, c:ingCost(a,u,n)})); const have=rows.filter(x=>x.c);
+  if(!have.length) return null; const tot=have.reduce((s,x)=>s+x.c.eur,0); const por=((state.recipePor||{})[r.id])||r.por||1;
+  return {tot, per:tot/por, por, rows, miss:rows.filter(x=>!x.c).map(x=>x.n)};
+}
+const eur = v => v.toFixed(2).replace(".",",")+" €";
+function costLine(r){ const c=recipeCost(r); if(!c) return null; return "💶 "+eur(c.per)+" pro "+(r.box?"Box":r.unit||"Portion")+" · "+eur(c.tot)+" gesamt"; }
+// Rezepte: Preis in der Übersicht und je Zutat
+function decorateRecipeCosts(){
+  const box=$("recipes"); if(!box) return; const list=allRecipes();
+  box.querySelectorAll("details.recipe").forEach(d=>{
+    if(d.dataset.cost) return; d.dataset.cost="1"; const name=(d.querySelector(".rhead > div > span")||{}).firstChild; const nm=name && name.textContent; const r=list.find(x=>x.n===nm); if(!r) return;
+    const c=recipeCost(r); if(!c) return;
+    const mac=d.querySelector(".macros"); if(mac){ const cl=el("div","rcost",costLine(r)); mac.after(cl); }
+    const trs=d.querySelectorAll("table tbody tr"); c.rows.forEach((x,i)=>{ const tr=trs[i]; if(!tr) return; tr.append(el("td","num rc", x.c ? eur(x.c.eur) : "")); if(!x.c) tr.classList.add("noPrice"); });
+    const tb=d.querySelector("table"); if(tb){ const s=el("div","rcostSum"); s.append(el("b",null,"Gekauft für dieses Rezept: "+eur(c.tot)+" · "+eur(c.per)+" pro "+(r.box?"Box":r.unit||"Portion"))); if(c.miss.length) s.append(el("div","note","Nicht mitgerechnet, weil kein Preis da: "+c.miss.join(", ")+".")); tb.after(s); }
+  });
+}
+// Preise verwalten (bei Einkauf)
+function renderPrices(){
+  let card=$("priceCard"); const host=$("f-cart"); if(!host) return;
+  if(!card){ card=el("div","card"); card.id="priceCard"; host.append(card); }
+  card.innerHTML=""; const h=el("div","between"); const h3=el("h3"); h3.textContent="💶 Meine Preise"; putInfo(h3,"price"); const add=el("button","link","+ Neu"); add.onclick=()=>openPrice(null); h.append(h3, add); card.append(h);
+  card.append(el("div","note","Damit rechnen die Rezepte, was eine Portion kostet. Nur was hier steht, wird mitgerechnet. Antippen zum Ändern."));
+  const ul=el("ul","list"); prices().slice().sort((a,b)=>a.n.localeCompare(b.n,"de")).forEach(p=>{
+    const li=el("li","item nt prow"); const tx=el("div","txt"); tx.append(el("span",null,p.n), el("div","sub",fmtAmt(p.amt)+" "+p.u+" · "+(p.src||"")));
+    const per = p.u==="g"||p.u==="ml" ? eur(p.eur/p.amt*1000)+(p.u==="g"?"/kg":"/l") : p.amt>1 ? eur(p.eur/p.amt)+"/"+p.u : "";
+    const rt=el("div","pr"); rt.append(el("b",null,eur(p.eur))); if(per) rt.append(el("small",null,per));
+    li.append(tx, rt); li.addEventListener("click",()=>openPrice(p)); ul.append(li); });
+  card.append(ul);
+}
+function openPrice(p){
+  const ed=!!p; p=p||{id:"p"+Date.now(), n:"", kw:"", amt:"", u:"g", eur:"", gpu:null, src:""};
+  openSheet(q=>{ sheetHead(q, ed?p.n:"Neuer Preis");
+    const [ln,iN]=field("Was","text",p.n); q.append(ln);
+    const g=el("div","grid3"); const [la,iA]=field("Packung","number",p.amt); const lu=el("label","f","Einheit"), sU=el("select"); ["g","ml","Stk","Dose"].forEach(v=>{ const o=el("option",null,v); o.value=v; sU.append(o); }); sU.value=p.u; lu.append(sU); const [le,iE]=field("Preis €","number",p.eur); g.append(la,lu,le); q.append(g);
+    const [lk,iK]=field("Passt zu Zutaten (Wörter mit | trennen)","text",p.kw||""); q.append(lk);
+    q.append(el("div","note","Beispiel: Packung 400 g für 3,79 €. Die Wörter sorgen dafür, dass „Rinderhack“ im Rezept zu deinem Hack passt. Leer lassen, dann zählt der Name."));
+    const [ls,iS]=field("Gekauft bei","text",p.src||""); q.append(ls);
+    const sv=el("button","btn wide","Speichern"); sv.onclick=()=>{ const n=iN.value.trim(), a=num(iA.value), e=num(iE.value); if(!n || !(a>0) || !(e>=0)){ toast("Name, Packung und Preis eintragen"); return; }
+      Object.assign(p,{n, amt:a, u:sU.value, eur:e, kw:normTxt(iK.value.trim()), src:iS.value.trim()}); if(!ed) prices().push(p); persist(); closeSheet(); render(); toast("Preis gespeichert"); };
+    q.append(sv);
+    if(ed){ const del=el("button","link","Preis löschen"); del.onclick=()=>{ state.prices=prices().filter(x=>x!==p); persist(); closeSheet(); render(); }; q.append(del); }
+  });
+}
+INFO.price={t:"Preise und Kosten pro Portion", g:"Essen", was:"Was deine Rezepte kosten, gerechnet nur mit dem, was du wirklich gekauft hast.", wie:"Jede Zutat im Rezept wird mit deinen Preisen verglichen. Passt eine, rechnet die App Menge mal Preis pro Gramm, Stück oder Dose. Zutaten ohne Preis zählen nicht mit und stehen unter dem Rezept.", tun:"Nach dem Einkauf neue Preise eintragen oder ändern, dann stimmen die Kosten wieder."};
+
+{ const _rr=renderRecipes; renderRecipes=function(){ _rr(); try{ decorateRecipeCosts(); }catch(e){ console.error(e); } }; }
+{ const _rc=renderCart; renderCart=function(){ _rc(); try{ renderPrices(); }catch(e){ console.error(e); } }; }
 
 // ---------- Start
 (async function(){
