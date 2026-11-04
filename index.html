@@ -861,6 +861,7 @@ body[data-tab="training"]::before{filter:hue-rotate(140deg)}body[data-tab="essen
 .addTile .ae{font-size:28px}
 .addTile b{font-size:14px}
 .addTile small{font-size:11px;color:var(--muted)}
+.suppRows .spSum{font-size:12px;color:var(--muted);padding:4px 0 2px}
 
 :root{--mzb:color-mix(in srgb,var(--ink) 9%,var(--panel));--mz0:color-mix(in srgb,var(--ink) 20%,var(--panel))}
 .sheet{z-index:96}.toast{z-index:160}
@@ -1396,7 +1397,7 @@ const TPL = {
 const CAT = {steps:"steps", suppM:"supp", suppE:"supp", fr:"essen", b1:"essen", b2:"essen", ab:"essen", sn:"essen", sh:"essen", gym:"gym", caf:"koffein", wind:"schlaf", sleep:"schlaf"};
 const CATS = [["essen","Essen"],["gym","Training"],["koffein","Koffeinstopp"],["schlaf","Licht dimmen und Schlafen"],["supp","Supplements morgens und abends"],["steps","Schritte Check in der Freizeit"],["meas","Körpermaße nehmen"],["plan","Abends: Schicht für morgen fehlt"]];
 const HABITS = [["steps","Schrittziel geschafft"],["sun","Morgens 10 Min. Tageslicht"],["dnd","Handy ab Schlafenszeit auf Nicht stören"],["tv","TV nur mit Sleep Timer (max. 30 Min.)"]];
-const CAF_DRINKS = [["Kaffee",90],["Espresso",65,"1 Shot, ca. 25 ml",0],["Doppelter Espresso",125,"2 Shots, ca. 50 ml",0],["Cappuccino",65,"Espresso + 120 ml Milchschaum",120],["Latte Macchiato",65,"Espresso + 200 ml Milch",200],["Flat White",125,"2 Shots + 120 ml Milch",120],["Monster 0,5 l",160],["Red Bull 0,25 l",80],["Cola 0,5 l",50],["Club Mate",100],["Energy Discounter",160]];
+const CAF_DRINKS = [["Kaffee",90],["Espresso",65,"1 Shot, ca. 25 ml",0],["Doppelter Espresso",125,"2 Shots, ca. 50 ml",0],["Cappuccino",65,"Espresso + 120 ml Milchschaum",120],["Latte Macchiato",65,"Espresso + 200 ml Milch",200],["Flat White",125,"2 Shots + 120 ml Milch",120],["Monster 0,5 l",160],["Monster 0,5 l Zero",160],["Red Bull 0,25 l",80],["Red Bull 0,25 l Zero",80],["Cola 0,5 l",50],["Cola 0,5 l Zero",50],["Club Mate",100],["Energy Discounter",160]];
 function drinkMilk(n,ml){ const c=coffeeSet(), key=c.milk && c.milk!=="none" ? c.milk : "m15", m=MILK[key], f=ml/100; return {n:n+" ("+ml+" ml "+m[0]+")", kcal:Math.round(m[1]*f), p:Math.round(m[2]*f*10)/10, c:Math.round(m[3]*f*10)/10, f:Math.round(m[4]*f*10)/10}; }
 const CAF_HALF = 5; // Stunden
 let STEP_GOAL = 8000;
@@ -2034,8 +2035,8 @@ function renderCaf(k){
   const cb=$("cafBtns"); cb.innerHTML="";
   const addCaf=(n,mg,t)=>{ const atBed = bed && bed>new Date() ? cafLevel(bed)+mg*Math.pow(0.5,(bed-t)/3600000/CAF_HALF) : 0; state.caf.unshift({n,mg,t}); state.caf.sort((a,b)=>b.t-a.t); state.caf=state.caf.filter(c=>Date.now()-c.t<48*3600000); persist(); render(); toast(atBed>50 ? n+" eingetragen. Achtung, wird knapp für den Schlaf" : n+" eingetragen um "+hm(new Date(t))+" Uhr"); };
   const cf=coffeeSet();
-  CAF_DRINKS.forEach(([n0,mg0,sub,ml])=>{ const isK=n0==="Kaffee", n=isK?coffeeName():n0, mg=isK?coffeeMg():mg0; const b=el("button"); b.append(document.createTextNode(isK?"Kaffee":n)); b.append(el("small",null,(isK?de(cf.ml)+" ml"+(coffeeMilk()?" + Milch":"")+" · ":ml?ml+" ml Milch · ":"")+mg+" mg")); if(sub) b.title=sub;
-    b.addEventListener("click",()=>{ if(isK || ml!=null) openDrink(n0,n,mg,isK?coffeeSet().milkMl:ml,isK,addCaf); else if(CAF_ML[n0]) openEnergy(n0,addCaf); else addCaf(n,mg,Date.now()); }); cb.append(b); });
+  CAF_DRINKS.forEach(([n0,mg0,sub,ml])=>{ const isK=n0==="Kaffee", n=isK?coffeeName():n0, mg=isK?coffeeMg():mg0; const b=el("button"); const eb=CAF_ML[n0.replace(/ Zero$/,"")], ez=/ Zero$/.test(n0); b.append(document.createTextNode(isK?"Kaffee":eb?eb.n+(ez?" Zero":""):n)); b.append(el("small",null, eb ? ((state.energyLast||{})[n0.replace(/ Zero$/,"")+(ez?" Z":"")]||eb.def)+" ml · "+(ez?"0 Zucker":"mit Zucker") : (isK?de(cf.ml)+" ml"+(coffeeMilk()?" + Milch":"")+" · ":ml?ml+" ml Milch · ":"")+mg+" mg")); if(sub) b.title=sub;
+    b.addEventListener("click",()=>{ if(isK || ml!=null) openDrink(n0,n,mg,isK?coffeeSet().milkMl:ml,isK,addCaf); else if(CAF_ML[n0.replace(/ Zero$/,"")]) openEnergy(n0,addCaf,/ Zero$/.test(n0)); else addCaf(n,mg,Date.now()); }); cb.append(b); });
   const own=el("button"); own.append(document.createTextNode("Eigenes")); own.append(el("small",null,"mit Uhrzeit")); own.addEventListener("click",()=>openCaf(null)); cb.append(own);
   if(!(document.activeElement && $("cafCoffee").contains(document.activeElement))) drawCoffee();
   const ul=$("cafLog"); ul.innerHTML="";
@@ -5717,12 +5718,14 @@ function suppRowsEl(label,k,it){
     mi.addEventListener("click",e=>{ e.stopPropagation(); setN(n-D.step); }); pl.addEventListener("click",e=>{ e.stopPropagation(); setN(n+D.step); });
     st.append(mi,val,pl);
     const tk=tickBtn(on, e=>{ e.stopPropagation(); if(!mid) return;
-      if(c[mid]) L.forEach(x=>{ if(c["sp:"+x.id]==null) c["sp:"+x.id]={n:suppAmt(c,x), t:c[mid]}; });
+      L.forEach(x=>{ if(c["sp:"+x.id]==null) c["sp:"+x.id]= c[mid] ? {n:suppAmt(c,x), t:c[mid]} : false; });
       c["sp:"+s.id] = on ? false : {n, t:Date.now()};
-      const all=L.every(x=>spTaken(c,x,"__none")); c[mid] = all ? (c[mid]||Date.now()) : false;
+      // Schon ein Supplement reicht, damit der Punkt erledigt ist. Nicht alles nehmen ist ok.
+      const any=L.some(x=>spTaken(c,x,"__none")); c[mid] = any ? (c[mid]||Date.now()) : false;
       if(!on) sfx && sfx("tick"); persist(); render(); }, s.n+" genommen"); tk.classList.add("sm");
     r.addEventListener("click",e=>e.stopPropagation());
     r.append(nm, tk, st); if(D.rest) r.append(el("span","spd",D.rest)); box.append(r); });
+  if(mid && L.length>1){ const nTaken=L.filter(x=>spTaken(c,x,mid)).length; if(nTaken>0 && nTaken<L.length) box.append(el("div","spSum",nTaken+" von "+L.length+" genommen, passt so")); }
   return box; }
 
 
@@ -6123,8 +6126,8 @@ function openAddMenu(k, id){
 }
 // Energy Drinks und Cola mit ml
 const CAF_ML={"Monster 0,5 l":{n:"Monster",mg:32,k:47,kz:1,c:11,sizes:[355,500,568],def:500},"Red Bull 0,25 l":{n:"Red Bull",mg:32,k:46,kz:3,c:11,sizes:[250,355,473],def:250},"Cola 0,5 l":{n:"Cola",mg:10,k:42,kz:0.3,c:10.6,sizes:[330,500,1000,1500],def:500},"Club Mate":{n:"Club Mate",mg:20,k:20,kz:20,c:5,sizes:[330,500],def:500},"Energy Discounter":{n:"Energy (Discounter)",mg:32,k:45,kz:2,c:11,sizes:[250,500],def:500}};
-function openEnergy(key, addCaf){
-  const d=CAF_ML[key]; let ml=d.def, zero=key.indexOf("Monster")===0 || key.indexOf("Cola")===0 ? false : false;
+function openEnergy(key, addCaf, z0){
+  const base=key.replace(/ Zero$/,""), d=CAF_ML[base]; const last=(state.energyLast||{})[base+(z0?" Z":"")]; let ml=last||d.def, zero=!!z0;
   openSheet(p=>{ sheetHead(p,"⚡ "+d.n);
     p.append(el("span","label","Menge in ml"));
     const ch=el("div","chips wrapc"); const inp=el("input","num"); inp.type="number"; inp.inputMode="numeric"; inp.value=ml; inp.style.maxWidth="110px";
@@ -6132,12 +6135,12 @@ function openEnergy(key, addCaf){
     d.sizes.forEach(v=>{ const b=el("button",null,(v>=1000?String(v/1000).replace(".",",")+" l":v+" ml")); b.dataset.v=v; b.onclick=()=>{ ml=v; inp.value=v; mk(); draw(); }; ch.append(b); }); p.append(ch);
     const row=el("div","row nowrap"); row.style.cssText="align-items:center;gap:8px;margin-top:4px"; row.append(el("span","note","Eigene Menge"), inp, el("span","note","ml")); p.append(row);
     inp.oninput=()=>{ ml=Math.max(0,Math.round(num(inp.value)||0)); mk(); draw(); };
-    const seg=el("div","seg"); seg.style.marginTop="8px"; [["false","Mit Zucker"],["true","Zero, zuckerfrei"]].forEach(([v,t])=>{ const b=el("button",null,t); b.dataset.v=v; b.onclick=()=>{ zero=v==="true"; seg.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false")); draw(); }; seg.append(b); }); seg.firstChild.setAttribute("aria-pressed","true"); p.append(seg);
+    const seg=el("div","seg"); seg.style.marginTop="8px"; [["false","Mit Zucker"],["true","Zero, zuckerfrei"]].forEach(([v,t])=>{ const b=el("button",null,t); b.dataset.v=v; b.onclick=()=>{ zero=v==="true"; seg.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false")); draw(); }; seg.append(b); }); seg.querySelector('[data-v="'+zero+'"]').setAttribute("aria-pressed","true"); p.append(seg);
     const out=el("div","alert ok"); p.append(out);
     const vals=()=>{ const f=ml/100, kc=Math.round((zero?d.kz:d.k)*f), cc=zero?0:Math.round(d.c*f*10)/10; return {mg:Math.round(d.mg*f), kc, cc}; };
     const draw=()=>{ const v=vals(); out.textContent=v.mg+" mg Koffein · "+v.kc+" kcal"+(v.cc?" · "+fmtAmt(v.cc)+" g Zucker":""); };
     mk(); draw();
-    const go=el("button","btn wide","Eintragen"); go.onclick=()=>{ const v=vals(), nm=d.n+(zero?" Zero":"")+" "+(ml>=1000?String(ml/1000).replace(".",",")+" l":ml+" ml"); if(v.kc>=5) dayFood(calToday()).push(applyAddMeta({t:Date.now(), n:nm, kcal:v.kc, p:0, c:v.cc, f:0, sug:v.cc, fib:0})); addMeta=null; closeSheet(); addCaf(nm, v.mg, Date.now()); };
+    const go=el("button","btn wide","Eintragen"); go.onclick=()=>{ const v=vals(), nm=d.n+(zero?" Zero":"")+" "+(ml>=1000?String(ml/1000).replace(".",",")+" l":ml+" ml"); if(v.kc>=5) dayFood(calToday()).push(applyAddMeta({t:Date.now(), n:nm, kcal:v.kc, p:0, c:v.cc, f:0, sug:v.cc, fib:0})); addMeta=null; state.energyLast=state.energyLast||{}; state.energyLast[base+(zero?" Z":"")]=ml; closeSheet(); addCaf(nm, v.mg, Date.now()); };
     p.append(go); p.append(el("div","note","Koffein: Energy Drinks ca. 32 mg je 100 ml, Cola ca. 10 mg, Mate ca. 20 mg. Mit Zucker zählen die Kalorien automatisch beim Essen mit."));
   });
 }
