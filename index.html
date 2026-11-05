@@ -1712,7 +1712,20 @@ const PLANS = {
   gk3:{n:"Ganzkörper, 3 Mal", pw:3, lvl:"Einsteiger", d:"3 Mal pro Woche den ganzen Körper. Ideal für den Anfang oder wenn Schichten wenig Zeit lassen.", seq:["G1","P","G2","P","G1","P","P","G2","P","G1","P","G2","P","P"]},
   gk2:{n:"Ganzkörper, 2 Mal", pw:2, lvl:"Einsteiger", d:"Minimum mit gutem Effekt: 2 Mal pro Woche je ca. 60 Minuten.", seq:["G1","P","P","G2","P","P","P"]}
 };
+// v2.0.97 (Einheiten): Beintage nach Marios Plan. A Quads, B Kniebeuge und RDL. Bauch und Cardio bleiben dran.
+Object.assign(UNITS, {
+  LA:{legs:true, t:"Beine A: Fokus Quads", s:[["quad","2 × 6 bis 10"],["presse","2 × 6 bis 10"],["strecker","3 × 8 bis 10"],["adduktor","2 × 8 bis 12"],["wadeSteh","3 × 8 bis 12"],["bauch","2 × 10 bis 15"],["cardio","15 bis 20 Min."]]},
+  LB:{legs:true, t:"Beine B: Kniebeuge und RDL", s:[["quad","2 × 6 bis 10"],["hinge","3 × 6 bis 10"],["beugerSitz","3 × 8 bis 10"],["wadeSteh","2 × 8 bis 12"],["bauch","2 × 10 bis 15"]]}
+});
 const DEFAULT_PICK = {"A0":[1,3,3],"A2":[0,0,0],"C2":[0,3,3],"D0":[0,4,4],"D2":[0,3,3],"E0":[0,0,0]};
+// Kniebeuge Langhantel und Rumänisches Kreuzheben Langhantel als Standard, mit Handverletzung die schonenden Varianten
+Object.assign(DEFAULT_PICK, {"LA0":[2,2,4],"LB0":[2,2,4],"LB1":[3,3,4]});
+PLANS.win.seq=["A","LA","P","C","LB","E","P"];
+PLANS.okuk.seq=["O1","LA","P","O2","LB","P","P"];
+PLANS.ppl.seq=["PU","PL","LA","P","PU","PL","LB","P"];
+PLANS.ppl3.seq=["PU","P","PL","P","LA","P","P","PU","P","PL","P","LB","P","P"];
+PLANS.pppb.seq=["PU","PL","P","LB","LA","P","P"];
+PLANS.pppb6.seq=["PU","PL","LB","PU","PL","LA","P"];
 let SEQ = PLANS.win.seq;
 const curPlan = () => PLANS[P().plan] || PLANS.win;
 const LEG_PK=new Set(["quad","presse","strecker","einbein","hinge","beugerSitz","beugerLieg","hyper","adduktor","wadeSteh","wadeSitz"]);
