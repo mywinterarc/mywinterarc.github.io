@@ -1143,6 +1143,13 @@ body:not([data-tab="training"]) .headR > div:has(> #weekLabel){display:none!impo
 .subOpt small{grid-column:1 / -1;color:var(--muted);font-size:12.5px}
 .subOpt:active{transform:scale(.98)}
 .ingNut summary{font-size:13.5px;color:var(--muted);cursor:pointer;margin:6px 0}
+.ingFind{display:flex;gap:8px;margin:2px 0 6px}
+.ingFind .btn{flex:1}
+.ingSearch input{width:100%;margin:2px 0 6px}
+.ingRes{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;max-height:46vh;overflow:auto}
+.ingHit{display:flex;flex-direction:column;align-items:flex-start;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:9px 12px;color:var(--ink);animation:rise .3s var(--swift) both}
+.ingHit small{color:var(--muted);font-size:12.5px}
+.ingHit:active{transform:scale(.98)}
 </style>
 </head>
 <body>
@@ -6808,6 +6815,23 @@ function openIngEdit(r, x){
     const g=el("div","grid2"); const [la,ia]=field("Menge"+(s!==1?" (bei "+fmtAmt(s)+"×)":""),"number", cur.a!=="" ? Math.round(cur.a*s*10)/10 : ""); const lu=el("label","f","Einheit"), su=el("select"); ["g","ml","Stk","EL","TL","Prise","Dose","Dosen","Pck"].forEach(v=>{ const o=el("option",null,v); o.value=v; su.append(o); }); if(![...su.options].some(o=>o.value===cur.u)){ const o=el("option",null,cur.u); o.value=cur.u; su.append(o); } su.value=cur.u; lu.append(su); g.append(la,lu); p.append(nl,g);
     const nd=el("details","ingNut"); nd.append(el("summary",null,"Nährwerte je 100 g, falls die App sie nicht kennt")); const g4=el("div","grid4"); const nf=["kcal","Eiweiß","Kohlenh.","Fett"].map(l=>{ const [lab,i]=field(l,"number",""); g4.append(lab); return i; }); nd.append(g4); p.append(nd);
     const hint=el("div","note"); const upd=()=>{ const n=ni.value.trim(); const k=!!(ING[n]||(state.myIng||{})[n]); hint.textContent = !n ? "" : k ? "✓ Nährwerte bekannt, werden mitgerechnet." : "Unbekannt: ohne Nährwerte unten wird sie nicht mitgerechnet."; nd.hidden=k; }; ni.addEventListener("input",upd); upd(); p.append(hint);
+    // Scannen oder in der Datenbank suchen, Produkt mit Nährwerten je 100 g übernehmen
+    const fillFrom=m=>{ const name=(m.n+(m.brand && !normTxt(m.n).includes(normTxt(m.brand))?" ("+m.brand.split(",")[0].trim()+")":"")).trim(); ni.value=name; if(!["g","ml"].includes(su.value)) su.value="g";
+      if(m.k100!=null) [m.k100,m.p100,m.c100,m.f100].forEach((v,i)=>{ nf[i].value = v!=null ? Math.round(v*10)/10 : ""; });
+      upd(); if(!ING[name] && !(state.myIng||{})[name]){ nd.hidden=false; nd.open = m.k100!=null; hint.textContent = m.k100!=null ? "✓ Nährwerte vom Produkt übernommen, je 100 g." : "Keine Nährwerte hinterlegt, bitte von der Packung eintragen."; }
+      res.innerHTML=""; res.hidden=true; buzz(8); if(!(num(ia.value)>0)) setTimeout(()=>ia.focus(),60); toast(name+" übernommen"+(m.k100!=null?"":", Werte fehlen")); };
+    const tools=el("div","ingFind"); const bS=el("button","btn ghost small","📷 Scannen"), bQ=el("button","btn ghost small","🔍 Suchen"); tools.append(bS,bQ);
+    const sbox=el("div","ingSearch"); sbox.hidden=true; const sin=el("input"); sin.type="search"; sin.placeholder="Produkt suchen, z. B. Skyr, Kokosraspel"; const sOn=el("button","link","Online suchen"); sbox.append(sin);
+    const res=el("div","ingRes"); res.hidden=true;
+    const showRes=(items,msg)=>{ res.innerHTML=""; res.hidden=false; const seen=new Set(); items=items.filter(m=>{ const k=m.code||(m.n+"|"+(m.brand||"")); if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,10);
+      if(msg) res.append(el("div","note",msg)); items.forEach(m=>{ const b=el("button","ingHit"); b.type="button"; b.append(el("b",null,foodEmoji(m.n)+" "+m.n), el("small",null,[m.brand, m.k100!=null?de(m.k100)+" kcal":"kcal fehlt", "P "+fmtAmt(m.p100||0)].filter(Boolean).join(" · ")+" je 100 g")); b.onclick=()=>fillFrom(m); res.append(b); });
+      if(!items.length && !msg) res.append(el("div","note","Nichts gefunden. Online suchen oder selbst eintragen.")); res.append(sOn); };
+    const local=q=>{ const ws=normTxt(q).split(/\s+/).filter(Boolean); const hit=m=>ws.every(w=>normTxt(m.n+" "+(m.brand||"")).includes(w)); return (state.myfoods||[]).filter(hit).slice(0,4).concat(BASIC_FOODS.filter(hit).slice(0,6), dbSearch(q,12)); };
+    let st=null; sin.addEventListener("input",()=>{ clearTimeout(st); st=setTimeout(async()=>{ const q=sin.value.trim(); if(q.length<2){ res.hidden=true; return; } await loadFoodDb(); showRes(local(q)); },200); });
+    sOn.onclick=async()=>{ const q=sin.value.trim(); if(q.length<2) return; showRes(local(q),"Suche online …"); let r=[]; try{ const j=await getJSON("https://search.openfoodfacts.org/search?q="+encodeURIComponent(q)+"&langs=de&page_size=20&fields="+OFF_FIELDS, 8000); r=(j.hits||[]).map(x=>fromOFF(Object.assign({},x,{brands:Array.isArray(x.brands)?x.brands.join(","):x.brands}))).filter(m=>m.k100!=null); }catch(e){} showRes(local(q).concat(r), r.length?"":"Online nichts gefunden oder kein Netz."); };
+    bQ.onclick=()=>{ sbox.hidden=!sbox.hidden; if(!sbox.hidden){ sin.value=ni.value; setTimeout(()=>sin.focus(),50); if(sin.value.trim().length>=2) sin.dispatchEvent(new Event("input")); } else res.hidden=true; };
+    bS.onclick=async()=>{ if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ toast("Kamera wird hier nicht unterstützt"); return; } const code=await readCode(); if(!code) return; toast("Suche Produkt …"); let m=null; try{ m=await lookupCode(code); }catch(e){} if(!m){ toast("Produkt nicht gefunden. Name und Werte von der Packung eintragen"); ni.value=""; upd(); nd.hidden=false; nd.open=true; setTimeout(()=>ni.focus(),60); return; } fillFrom(m); };
+    nl.before(tools, sbox, res);
     const ok=el("button","btn wide", isAdd ? "Dazu" : "Übernehmen"); ok.onclick=()=>{
       const n=ni.value.trim(), a=num(ia.value); if(!n || !(a>0)){ toast("Zutat und Menge eintragen"); return; }
       const v=nf.map(i=>num(i.value)); if(!ING[n] && v[0]>=0 && v.some(z=>z>0)){ state.myIng=state.myIng||{}; state.myIng[n]=v.map(z=>z>0?z:0); }
