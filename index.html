@@ -1788,6 +1788,9 @@ const RECIPES = [
   {id:"oats", n:"Overnight Oats Protein", por:1, kcal:506, p:42, c:55, f:10,
    z:[[60, "g", "Haferflocken", "Vorrat"], [150, "g", "Skyr", "Kühlregal"], [100, "ml", "Milch", "Kühlregal"], [15, "g", "Whey", "Vorrat"], [80, "g", "TK Beeren", "TK"], [10, "g", "Chiasamen", "Vorrat"]],
    st:["Alles am Abend in ein Glas oder eine Box geben und gut verrühren.", "Über Nacht in den Kühlschrank, morgens fertig zum Mitnehmen.", "Tipp für die Frühschicht: 3 Gläser auf einmal machen, hält 3 Tage."]},
+  {id:"ruehrei", n:"Protein Rührei mit Toast", por:1, kcal:543, p:48, c:30, f:26,
+   z:[[3, "Stk", "Eier", "Kühlregal"], [150, "ml", "Eiklar", "Kühlregal"], [50, "g", "Hüttenkäse", "Kühlregal"], [5, "ml", "Rapsöl", "Vorrat"], [60, "g", "Körner Toast", "Brot"], [5, "g", "Schnittlauch", "Gemüse"]],
+   st:["3 Eier, 150 ml Eiklar und 50 g Hüttenkäse mit Salz und Pfeffer verquirlen.", "Pfanne mit 5 ml Rapsöl auf mittlere Hitze. Masse rein und mit dem Pfannenwender langsam von außen nach innen schieben, bis sie gerade fest ist. Nicht zu heiß, dann bleibt es cremig.", "2 Scheiben Toast rösten, Rührei drauf, Schnittlauch drüber.", "Tipp: Eiklar gibt es als Flasche im Kühlregal. Viel Eiweiß fast ohne Fett, hält offen ein paar Tage."]},
   {id:"pancake", n:"Protein Pancakes", por:1, kcal:584, p:46, c:62, f:15,
    z:[[50, "g", "Haferflocken", "Vorrat"], [1, "Stk", "Banane", "Gemüse"], [2, "Stk", "Eier", "Kühlregal"], [150, "g", "Magerquark", "Kühlregal"], [1, "TL", "Backpulver", "Vorrat"], [10, "g", "Whey", "Vorrat"]],
    st:["Alles mit dem Pürierstab oder Mixer glatt mixen, 5 Minuten quellen lassen.", "Beschichtete Pfanne mit etwas Öl auf mittlere Hitze, kleine Pancakes ausbacken (ca. 2 Min. pro Seite).", "Mit Beeren oder etwas Skyr belegen."]},
@@ -3202,6 +3205,7 @@ function renderLog(k){
 // ---------- Unterwegs: Fast Food und Snacks (Werte ca., je Portion)
 const FASTFOOD = [
   ["Kantine","Bockwurst mit Brötchen und Senf",440,17,33,25],
+  ["Kantine","Rührei, Portion (ca. 3 Eier)",290,19,2,23],["Kantine","Rührei mit Speck",420,25,2,35],["Kantine","Halbes Brötchen mit Rührei",190,8.5,16,10],
   ["Kantine","Halbes Brötchen überbacken mit Hack, Mais und Käse",270,17,20,13],["Kantine","Halbes Brötchen überbacken mit Schinken und Käse",230,14,17,11],["Kantine","Halbes Brötchen Ei (Scheiben, kein Eiersalat)",170,10,16,6.5],
   ["Kantine","Halbes Brötchen Gehacktes (Mett) mit Zwiebeln",180,10.5,16,8],["Kantine","Ganzes Brötchen Gehacktes (Mett) mit Zwiebeln",360,21,32,16],
   ["Kantine","Halbes Brötchen Eiersalat",190,6.5,17,10.5],["Kantine","Halbes Brötchen Kochschinken",110,7.5,15.5,1.5],["Kantine","Halbes Brötchen roher Schinken",130,8,15.5,3.5],["Kantine","Halbes Brötchen Salami",155,6.5,15.5,7],
@@ -3489,6 +3493,7 @@ const PMM=[["Paella",490,40,45,15],["Chicken Teriyaki",474,43,55,8],["Butter Chi
   ["Chili con Carne",600,35,55,23],["Asia Nudeln in Erdnusssauce",570,43,42,24],["Gebratener Reis in Erdnusssauce",585,43,55,21]];
 const pmmItem = ([n,kcal,p,c,f]) => ({n:"PMM "+n+" (½ Tüte)", kcal, p, c, f});
 const BASIC_FOODS0=[
+ ["Rührei mit Milch und Butter","selbst gemacht",150,10,1.6,11],["Rührei nur aus Eiern","selbst gemacht",165,12,1,12.5],["Eiklar flüssig","Eigenmarke",48,11,0.7,0.2],["Körner Toast","Eigenmarke",260,9,43,4.5],
  ["Skyr natur","Eigenmarke",63,11,4,0.2],["Magerquark","Eigenmarke",67,12,4,0.2],["Speisequark 20 %","Eigenmarke",109,12,3.5,5],["Hüttenkäse","Eigenmarke",98,12.5,2.5,4.5],["Griechischer Joghurt 10 %","Eigenmarke",120,4,4,10],["Naturjoghurt 1,5 %","Eigenmarke",47,4,5,1.5],["High Protein Pudding","Ehrmann, Milbona",75,10,6,1.5],["Protein Joghurt","Milbona, Ehrmann",61,10,4,0.2],
  ["Milch 1,5 %","Eigenmarke",47,3.4,4.9,1.5],["Milch 3,5 %","Eigenmarke",64,3.3,4.8,3.5],["Haferdrink","Eigenmarke",45,0.5,7,1.5],["Eier (Stück ca. 60 g)","",142,12.6,0.7,9.8],["Gouda jung","Eigenmarke",356,24,0,29],["Gouda light 16 %","Eigenmarke",260,30,0,16],["Mozzarella light","Eigenmarke",165,19,1,9],["Mozzarella","Eigenmarke",250,18,1,19],["Feta","Eigenmarke",270,16,0.5,22.5],["Frischkäse light","Eigenmarke",145,7,4,11],["Reibekäse light","Eigenmarke",280,30,0,17],
  ["Hähnchenbrustfilet roh","Eigenmarke",105,23.5,0,1.2],["Hähnchenschenkel ohne Haut roh","",120,20,0,4],["Putenbrust roh","Eigenmarke",107,24,0,1],["Rinderhack 5 % roh","Eigenmarke",125,21,0,5],["Rinderhack 10 % roh","",165,20,0,10],["Gemischtes Hack roh","Eigenmarke",250,18,0,20],["Schweineschnitzel roh","",110,22.5,0,2],["Lachs","",208,20,0,13],["Hähnchenbrust Aufschnitt","Eigenmarke",105,20,1.5,2],["Kochschinken","Eigenmarke",115,19,1,4],["Salami","Eigenmarke",400,22,1,34],["Leberkäse","",280,12,1,25],["Wiener Würstchen","Eigenmarke",250,13,1,22],["Gyros Pfanne roh","Eigenmarke",160,19,1,9],
@@ -6218,7 +6223,7 @@ async function scanCamButton(bar){
 function mealBudget(k, leftK){ const h=new Date().getHours(), sh=state.shift[k]||"frei"; const share = h<10 ? 0.25 : h<15 ? 0.32 : h<20 ? 0.3 : 0.15; const g=goalKcal(k); return Math.max(300, Math.min(leftK, 850, Math.round(g*share))); }
 function bestCombos(ch, budget, needP){
   const it=FASTFOOD.filter(x=>x[0]===ch && !/dessert|pudding/i.test(x[1]) && !avoidHits(x[1]+" "+((ffInfo({ch:x[0],n:x[1],kcal:x[2],p:x[3],c:x[4],f:x[5]})||{}).desc||"")).length).map(x=>({n:x[1],kcal:x[2],p:x[3],c:x[4],f:x[5],half:/^Halbes/.test(x[1])}));
-  const early=new Date().getHours()<10, mains=it.filter(i=>!i.half && (!early || /brötchen/i.test(i.n))), halves=it.filter(i=>i.half), out=[];
+  const early=new Date().getHours()<10, mains=it.filter(i=>!i.half && (!early || /brötchen|rührei/i.test(i.n))), halves=it.filter(i=>i.half), out=[];
   const add=parts=>{ const t=parts.reduce((a,i)=>({kcal:a.kcal+i.kcal,p:a.p+i.p,c:a.c+i.c,f:a.f+i.f}),{kcal:0,p:0,c:0,f:0}); if(t.kcal>budget*1.1) return; const pp=Math.min(t.p,needP+10); out.push({parts, t, score: pp*3 - Math.max(0,t.p-needP-10)*0.5 + t.p/t.kcal*100*4 - t.f*0.6 - Math.abs(budget-t.kcal)/60}); };
   mains.forEach(m=>{ add([m]); halves.forEach(h=>{ add([m,h]); }); });
   halves.forEach((a,i)=>{ halves.slice(i).forEach(b=>{ add([a,b]); halves.slice(i).forEach(c=>add([a,b,c])); }); });
@@ -6760,7 +6765,7 @@ function decorateRecipes(){
 }
 
 // v2.0.96: Rezepte anpassen. Zutat ersetzen, Menge ändern, weglassen, eigene dazu.
-Object.assign(ING, {"Sprudelwasser":[0,0,0,0],"Sprite Zero":[1,0,0.1,0],"Zucker":[400,0,100,0],"Xylit":[240,0,100,0],"Vanillezucker":[400,0,100,0],"Weizenmehl 405":[340,10,72,1],"Weizenmehl 550":[340,11,71,1.2],"Sonnenblumenöl":[828,0,0,92],"Butter":[740,0.7,0.6,82],"Frischkäse Doppelrahm (Philadelphia)":[235,5.4,4.3,21.5],"Gehacktes gemischt":[260,17,0,21],"Möhren":[25,0.6,5,0.1],"Chili Beans":[330,19,45,4],"Weiße Bohnen":[220,17,32,1],"Natron":[0,0,0,0],"Honig":[304,0.4,80,0]});
+Object.assign(ING, {"Eiklar":[48,11,0.7,0.2],"Körner Toast":[260,9,43,4.5],"Schnittlauch":[0,0,0,0],"Sprudelwasser":[0,0,0,0],"Sprite Zero":[1,0,0.1,0],"Zucker":[400,0,100,0],"Xylit":[240,0,100,0],"Vanillezucker":[400,0,100,0],"Weizenmehl 405":[340,10,72,1],"Weizenmehl 550":[340,11,71,1.2],"Sonnenblumenöl":[828,0,0,92],"Butter":[740,0.7,0.6,82],"Frischkäse Doppelrahm (Philadelphia)":[235,5.4,4.3,21.5],"Gehacktes gemischt":[260,17,0,21],"Möhren":[25,0.6,5,0.1],"Chili Beans":[330,19,45,4],"Weiße Bohnen":[220,17,32,1],"Natron":[0,0,0,0],"Honig":[304,0.4,80,0]});
 // Ersatz: [Muster, [[neu, Faktor, Hinweis, Einheit]]]
 const SUBS=[
   [/fanta|cola zero|limo/i,[["Sprudelwasser",1,"gleich luftig, ohne Orange"],["Sprite Zero",1,"luftig, Zitrone"],["Milch",1,"saftiger, etwas mehr kcal"],["Wasser",1,"etwas kompakter"]]],
