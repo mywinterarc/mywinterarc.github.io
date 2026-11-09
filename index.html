@@ -1150,6 +1150,26 @@ body:not([data-tab="training"]) .headR > div:has(> #weekLabel){display:none!impo
 .ingHit{display:flex;flex-direction:column;align-items:flex-start;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:9px 12px;color:var(--ink);animation:rise .3s var(--swift) both}
 .ingHit small{color:var(--muted);font-size:12.5px}
 .ingHit:active{transform:scale(.98)}
+/* v2.0.100 Einheiten anpassen */
+.addEx{display:block;width:100%;margin:10px 0 2px;padding:13px;border-radius:16px;border:1.5px dashed color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--accent) 7%,transparent);color:var(--accent);font-weight:800;font-size:15px;transition:transform .2s var(--swift),background .2s}
+.addEx:active{transform:scale(.98);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.modNote{margin-top:6px}
+.swapMore{display:flex;flex-direction:column;gap:8px;margin:10px 0 6px}
+.swapMore .row{display:flex;gap:8px;flex-wrap:wrap}.swapMore .row .btn{flex:1}
+.btn.danger{color:#E5484D;border-color:color-mix(in srgb,#E5484D 50%,transparent)}
+.exPick{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.exGrp{border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden}
+.exGrp summary{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;font-weight:800;cursor:pointer}
+.exGrp summary small{color:var(--muted);font-weight:700}
+.exGrp[open] summary{border-bottom:1px solid var(--line)}
+.exRow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);padding:10px 14px;color:var(--ink);animation:rise .3s var(--swift) both}
+.exRow:last-child{border-bottom:0}
+.exRow > div{flex:1;display:flex;flex-direction:column;gap:2px}
+.exRow small{color:var(--muted);font-size:12.5px;display:flex;gap:6px;align-items:center}
+.exRow .exGo{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-weight:800;font-size:18px;flex:0 0 auto}
+.exRow.off{opacity:.45}
+.exRow:active{background:var(--bg)}
+label.chk{display:flex;align-items:center;gap:8px;font-size:14px;margin:4px 0}
 </style>
 </head>
 <body>
@@ -2164,7 +2184,7 @@ function widgetPush(){ clearTimeout(widgetT); widgetT=setTimeout(async ()=>{ try
   const js=JSON.stringify(Object.assign({},data,{u:0})); if(js===widgetLast) return; widgetLast=js;
   await Prefs.set({key:"widget", value:JSON.stringify(data)}); const WB=plug("WidgetBridge"); if(WB && WB.update) await WB.update();
 }catch(e){} }, 1500); }
-function render(){ try{ requestAnimationFrame(()=>{ try{ decorateTraining(); }catch(e){ console.error(e); } try{ v92Post(); }catch(e){ console.error(e); } }); }catch(e){} try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
+function render(){ try{ v98Sync(); }catch(e){ console.error(e); } try{ requestAnimationFrame(()=>{ try{ decorateTraining(); }catch(e){ console.error(e); } try{ v98Post(); }catch(e){ console.error(e); } try{ v92Post(); }catch(e){ console.error(e); } }); }catch(e){} try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
   applyPlan(); applyTheme(); STEP_GOAL = Number(P().stepGoal)||8000; widgetPush(); setTimeout(checkBadges, 50);
   const k = activeDay(), w = planWeek(k), ph = phase(w);
   $("dateLabel").textContent = (P().name ? "Hi "+P().name+" · " : "") + parseKey(k).toLocaleDateString("de-DE",{weekday:"long", day:"numeric", month:"long"}) + (k!==calToday() ? " · Schicht läuft noch" : "");
@@ -2831,7 +2851,7 @@ function renderTraining(k, ph){
     a.append(document.createTextNode(full ? "Tagesform heute nur "+rd.v+". Du trainierst trotzdem voll, hör auf deinen Körper. " : "Tagesform heute nur "+rd.v+" (Schlaf, Puls). Deshalb je Übung ein Satz weniger, Gewicht halten. "));
     const b=el("button","btn small ghost", full?"Wieder anpassen":"Trotzdem voll trainieren"); b.addEventListener("click",()=>{ state.formFull=state.formFull||{}; if(full) delete state.formFull[k]; else state.formFull[k]=true; persist(); render(); }); a.append(b); warn.append(a); }
   else if(rd && rd.v>=80 && u!=="P" && k===calToday()) al("Tagesform heute "+rd.v+", richtig gut erholt. Guter Tag, um beim Gewicht eine Stufe draufzulegen.","ok");
-  const list=$("unitList"), btns=$("unitBtns"); list.innerHTML=""; btns.innerHTML="";
+  const list=$("unitList"), btns=$("unitBtns"); list.innerHTML=""; btns.innerHTML=""; V98.shownU=u;
   const run=liveRun();
   if(run){
     const c=el("div","alert ok"); c.append(document.createTextNode("Training "+run.u+" läuft seit "+Math.floor((Date.now()-run.t)/60000)+" Min. "));
@@ -3064,8 +3084,8 @@ function renderLive(){
   }
   run.ex.forEach((x,xi)=>{
     const card=el("div","card lex"+((x.sets?x.sets.every(s=>s.done):x.done)?" exdone":""));
-    const top=el("div","between"); const nm=el("div","lexh"); const lp=exPicEl(x.name, UNITS[run.u].s[x.i][0]); const nmi=el("div"); nm.append(lp,nmi); nmi.append(el("div","nm",x.name)); const hint=el("div","hint"); hint.append(tagEl(x.o[1]), document.createTextNode(x.sr)); nmi.append(hint);
-    const sw=el("button","link","Tauschen"); sw.addEventListener("click",()=>openSwap(run.u,x.i,ph.hand)); top.append(nm, sw); card.append(top);
+    const top=el("div","between"); const nm=el("div","lexh"); const lp=exPicEl(x.name, x.pk||(UNITS[run.u].s[x.i]||[])[0]); const nmi=el("div"); nm.append(lp,nmi); nmi.append(el("div","nm",x.name)); const hint=el("div","hint"); hint.append(tagEl(x.o[1]), document.createTextNode(x.sr)); nmi.append(hint);
+    if(x.extra){ top.append(nm, el("span","note","nur heute")); } else { const sw=el("button","link","Tauschen"); sw.addEventListener("click",()=>openSwap(run.u,x.i,ph.hand)); top.append(nm, sw); } card.append(top);
     if(state.exNotes[x.name]) card.append(el("div","hint","📝 "+state.exNotes[x.name]));
     if(x.cardio){ const r=el("div","between"); r.append(el("span","note","Locker, Puls so dass du noch reden kannst.")); r.append(tickBtn(x.done,()=>{ x.done=!x.done; persist(); renderLive(); },"Cardio erledigt")); card.append(r); body.append(card); return; }
     const L=liftInfo(x.name), t=nextTarget(x.o,x.sr,L);
@@ -6116,7 +6136,7 @@ function renderAlarmCard(){
 
 // v2.0.77: Training nach aktuellem Stand (ACSM 2026, Metaanalysen): Pausen je Übung, Anstrengung (Wdh. Reserve), Regeln
 const COMPOUND=new Set(["quad","hinge","flach","schraeg","rudBrust","latWeit","latEng","rudKabel","presse","schulter","einbein"]);
-function isCompound(x){ try{ return COMPOUND.has(UNITS[x.u].s[x.i][0]); }catch(e){ return false; } }
+function isCompound(x){ try{ return COMPOUND.has(x.pk||UNITS[x.u].s[x.i][0]); }catch(e){ return false; } }
 function restFor(x){ const r=parseSR(x.sr)||{lo:8}; if(isCompound(x)) return r.lo<=6?180: r.lo<=8?150:120; return r.lo>=12?75:90; }
 function rirTxt(x, d){
   const w=planWeek(d), ph=phase(w);
@@ -6887,6 +6907,87 @@ decorateRecipes = function(){
     [...d.querySelectorAll("button")].filter(b=>b.textContent==="Essen eintragen").forEach(b=>{ const nb=b.cloneNode(true); b.replaceWith(nb); nb.onclick=()=>openFoodItem(activeDay(),{n:r.n,kcal:m.kcal,p:m.p,c:m.c,f:m.f,rid:r.id}); });
   });
 };
+
+// v2.0.100: Einheiten selbst anpassen. Übung gegen jede andere tauschen, hinzufügen, verschieben, entfernen.
+const V98={ orig:{}, dp:Object.assign({},DEFAULT_PICK), sig:null };
+Object.keys(UNITS).forEach(u=>{ V98.orig[u]=UNITS[u].s.map(x=>x.slice()); });
+function v98Orig(u){ if(!V98.orig[u] && UNITS[u]) V98.orig[u]=UNITS[u].s.map(x=>x.slice()); return V98.orig[u]||[]; }
+function modOf(u){ return (state.unitMod||{})[u] ? state.unitMod[u].map(x=>Object.assign({},x)) : v98Orig(u).map((x,i)=>({pk:x[0], sr:x[1], from:i})); }
+function applyUnitMods(){
+  const M=state.unitMod||{};
+  Object.keys(V98.orig).forEach(u=>{ if(!UNITS[u]) return; const m=M[u]; const len=Math.max(UNITS[u].s.length, v98Orig(u).length, m?m.length:0)+2;
+    for(let i=0;i<len;i++){ delete DEFAULT_PICK[u+i]; }
+    if(!m){ UNITS[u].s=v98Orig(u).map(x=>x.slice()); v98Orig(u).forEach((_,i)=>{ if(V98.dp[u+i]) DEFAULT_PICK[u+i]=V98.dp[u+i]; }); }
+    else { UNITS[u].s=m.filter(x=>PAT[x.pk]).map(x=>[x.pk,x.sr]); m.filter(x=>PAT[x.pk]).forEach((x,i)=>{ if(x.from!=null && V98.dp[u+x.from]) DEFAULT_PICK[u+i]=V98.dp[u+x.from]; }); }
+    UNITS[u].legs=UNITS[u].s.some(x=>LEG_PK.has(x[0]));
+  });
+  V98.sig=JSON.stringify(M);
+}
+function v98Sync(){ const s=JSON.stringify(state.unitMod||{}); if(s!==V98.sig) applyUnitMods(); }
+{ const _mm=mergeMyPlans; mergeMyPlans=function(){ _mm(); Object.entries(state.myPlans||{}).forEach(([id,pl])=>Object.entries(pl.units||{}).forEach(([k,u])=>{ V98.orig[k]=u.s.map(x=>x.slice()); })); applyUnitMods(); }; }
+function saveMod(u,m){ state.unitMod=state.unitMod||{}; state.unitMod[u]=m; applyUnitMods(); persist(); }
+function shiftKeys(u, fn){ ["swap","srOv"].forEach(k=>{ const o=state[k]||{}, out={}; Object.keys(o).forEach(key=>{ if(!key.startsWith(u)) { out[key]=o[key]; return; } const n=key.slice(u.length); if(!/^\d+$/.test(n)){ out[key]=o[key]; return; } const ni=fn(+n); if(ni!=null) out[u+ni]=o[key]; }); state[k]=out; }); }
+function liveBusy(u){ const r=liveRun(); return r && r.u===u; }
+const defSR = pk => pk==="cardio" ? "15 bis 20 Min." : /wade|bauch|seit|face|adduktor|strecker|beuger|bizeps|hammer|preacher|bayes|tri|fly/i.test(pk) ? "3 × 10 bis 15" : "3 × 8 bis 12";
+function unitReplace(u,i,pk,oi){ const m=modOf(u); const old=m[i]; m[i]={pk, sr: parseSR(old.sr)&&pk!=="cardio" ? old.sr : defSR(pk), from:null}; state.swap[u+i]=oi; saveMod(u,m); liveSwapped(u,i,options(pk)[oi]); }
+function unitAdd(u,pk,oi,sr){ const m=modOf(u); m.push({pk, sr, from:null}); const i=m.length-1; delete state.swap[u+i]; delete state.srOv[u+i]; state.swap[u+i]=oi; saveMod(u,m); return i; }
+function unitMove(u,i,d){ const j=i+d, m=modOf(u); if(j<0||j>=m.length) return; [m[i],m[j]]=[m[j],m[i]]; shiftKeys(u, n=> n===i ? j : n===j ? i : n); saveMod(u,m); }
+function unitRemove(u,i){ const m=modOf(u); const gone=m.splice(i,1)[0]; shiftKeys(u, n=> n===i ? null : n>i ? n-1 : n); saveMod(u,m); return gone; }
+function unitReset(u){ const n=Math.max(modOf(u).length, v98Orig(u).length)+2; for(let i=0;i<n;i++){ delete state.swap[u+i]; delete state.srOv[u+i]; } if(state.unitMod) delete state.unitMod[u]; applyUnitMods(); persist(); }
+// Übungsauswahl: alle Übungen, nach Muskel sortiert, mit Suche
+function openExPicker(o){
+  const ph=phase(planWeek(activeDay())), hand=ph.hand, u=o.u;
+  openSheet(p=>{
+    sheetHead(p, o.mode==="add" ? "Übung hinzufügen" : "Andere Übung wählen");
+    if(o.mode==="replace") p.append(el("div","note","Statt "+o.cur+". Sätze und Wiederholungen bleiben, wenn sie passen."));
+    let srIn=null, keep=null;
+    if(o.mode==="add"){ const g=el("div","grid3"); const [a,ia]=field("Sätze","number",3), [b,ib]=field("Wdh von","number",8), [c,ic]=field("bis","number",12); g.append(a,b,c); p.append(g); srIn=[ia,ib,ic];
+      if(o.live){ const lb=el("label","chk"); keep=el("input"); keep.type="checkbox"; keep.checked=true; lb.append(keep, document.createTextNode(" Auch künftig in dieser Einheit")); p.append(lb); } }
+    const sIn=el("input"); sIn.type="search"; sIn.placeholder="Suchen, z. B. Bizeps, Kabel, Presse"; p.append(sIn);
+    const box=el("div","exPick"); p.append(box);
+    const groups={}; Object.keys(PAT).forEach(pk=>{ const g=PK_MUSCLE[pk]||"Sonstiges"; (groups[g]=groups[g]||[]).push(pk); });
+    const order=["Brust","Rücken","Schultern","Bizeps","Trizeps","Beine","Beinbeuger","Po","Waden","Bauch","Cardio","Sonstiges"];
+    const pick=(pk,oi)=>{
+      const ox=options(pk)[oi];
+      if(o.mode==="replace"){ unitReplace(u,o.i,pk,oi); closeSheet(); render(); toast(ox[0]+" statt "+o.cur); return; }
+      let sr=defSR(pk); if(srIn && pk!=="cardio"){ const s=parseInt(srIn[0].value,10), lo=parseInt(srIn[1].value,10), hi=parseInt(srIn[2].value,10); if(!(s>0&&lo>0&&hi>=lo)){ toast("Bitte gültige Sätze und Wiederholungen"); return; } sr=s+" × "+lo+" bis "+hi; }
+      if(o.live){ const run=liveRun(); if(!run) return; const r=parseSR(sr);
+        if(!keep || keep.checked){ const i=unitAdd(u,pk,oi,sr); run.ex.push(Object.assign(liveEx(u,i,ox,sr,r,r?r.sets:0,false),{pk})); }
+        else { run.extra=(run.extra||0)+1; run.ex.push(Object.assign(liveEx(u,1000+run.extra,ox,sr,r,r?r.sets:0,false),{pk, extra:true})); }
+        persist(); closeSheet(); renderLive(); toast(ox[0]+" dazu"); setTimeout(()=>{ const c=[...document.querySelectorAll("#liveBody .lex")].pop(); if(c){ c.scrollIntoView({block:"center",behavior:RM?"auto":"smooth"}); c.classList.add("ownerPulse"); } },350); return; }
+      unitAdd(u,pk,oi,sr); closeSheet(); render(); toast(ox[0]+" hinzugefügt");
+      setTimeout(()=>{ const c=[...document.querySelectorAll("#unitList .ex")].pop(); if(c){ c.scrollIntoView({block:"center",behavior:RM?"auto":"smooth"}); c.classList.add("ownerPulse"); } },350);
+    };
+    const draw=()=>{ box.innerHTML=""; const q=normTxt(sIn.value.trim()); let n=0;
+      order.concat(Object.keys(groups).filter(g=>!order.includes(g))).forEach(g=>{ if(!groups[g]) return;
+        const rows=[]; groups[g].forEach(pk=>options(pk).forEach((ox,oi)=>{ if(q && !normTxt(ox[0]+" "+PAT[pk].n+" "+g).includes(q)) return; rows.push([pk,ox,oi]); }));
+        if(!rows.length) return; const d=el("details","exGrp"); if(q || o.open===g) d.open=true; const sm=el("summary"); sm.append(el("span",null,(MUSCLE_EMO[g]||"🏋️")+" "+g), el("small",null,rows.length+"")); d.append(sm);
+        rows.forEach(([pk,ox,oi])=>{ const ok=usable(ox,hand); const r=el("button","exRow"+(ok?"":" off")); r.type="button"; const t=el("div"); t.append(el("b",null,ox[0])); const h=el("small"); h.append(tagEl(ox[1]), document.createTextNode(PAT[pk].n)); t.append(h); r.append(t, el("span","exGo",ok?"+":"🔒")); if(ok) r.onclick=()=>{ buzz(8); pick(pk,oi); }; else r.onclick=()=>toast(ox[2]>hand?"Erst ab Hand Stufe "+ox[2]:"Gerät in den Einstellungen ausgeschaltet"); d.append(r); n++; });
+        box.append(d); });
+      if(!n) box.append(el("div","note","Nichts gefunden. Unter Tauschen bei einer Übung kannst du auch eine eigene anlegen.")); };
+    let tm=null; sIn.addEventListener("input",()=>{ clearTimeout(tm); tm=setTimeout(draw,150); }); draw();
+  }, "exPick");
+}
+// Tauschen erweitern: andere Übung, Reihenfolge, entfernen, Einheit zurück
+{ const _os=openSwap; openSwap=function(u,i,hand){ _os(u,i,hand); try{
+  const p=$("pane"); if(!p || !UNITS[u] || !UNITS[u].s[i]) return; const cur=options(UNITS[u].s[i][0])[pickFor(u,i,hand)][0];
+  const box=el("div","swapMore"); const busy=liveBusy(u);
+  const other=el("button","btn wide ghost","🔄 Ganz andere Übung wählen"); other.onclick=()=>openExPicker({mode:"replace",u,i,cur,open:PK_MUSCLE[UNITS[u].s[i][0]]});
+  box.append(other);
+  const row=el("div","row"); const up=el("button","btn small ghost","↑ Nach oben"), dn=el("button","btn small ghost","↓ Nach unten"), rm=el("button","btn small ghost danger","Entfernen");
+  up.disabled=i===0||busy; dn.disabled=i>=UNITS[u].s.length-1||busy; rm.disabled=busy||UNITS[u].s.length<=1;
+  up.onclick=()=>{ unitMove(u,i,-1); closeSheet(); render(); toast("Nach oben"); }; dn.onclick=()=>{ unitMove(u,i,1); closeSheet(); render(); toast("Nach unten"); };
+  rm.onclick=()=>{ const snap=JSON.stringify({m:state.unitMod&&state.unitMod[u]||null, sw:state.swap, so:state.srOv}); unitRemove(u,i); closeSheet(); render(); toast(cur+" entfernt",()=>{ const s=JSON.parse(snap); state.swap=s.sw; state.srOv=s.so; state.unitMod=state.unitMod||{}; if(s.m) state.unitMod[u]=s.m; else delete state.unitMod[u]; applyUnitMods(); persist(); render(); },"Rückgängig"); };
+  row.append(up,dn,rm); box.append(el("div","cat","In dieser Einheit"), row);
+  if(busy) box.append(el("div","note","Reihenfolge und Entfernen gehen nach dem Training. Tauschen geht jetzt."));
+  if((state.unitMod||{})[u]){ const rs=el("button","link","Ganze Einheit wie im Plan"); rs.onclick=()=>{ if(busy){ toast("Nach dem Training"); return; } unitReset(u); closeSheet(); render(); toast("Einheit wieder wie im Plan"); }; box.append(rs); }
+  const hd=p.querySelector(".exhero, .exPic, img"); const first=p.querySelector(":scope > .note"); (first||hd||p.firstChild).after(box);
+}catch(e){ console.error(e); } }; }
+// Knopf „Übung hinzufügen“ unter der Einheit und im laufenden Training
+function v98Post(){
+  const ul=$("unitList"); if(ul && ul.children.length && !ul.querySelector(".addEx")){ const u=V98.shownU || null; if(u && UNITS[u] && u!=="P"){ const b=el("button","addEx","+ Übung hinzufügen"); b.onclick=()=>openExPicker({mode:"add",u}); ul.append(b); if((state.unitMod||{})[u]){ const n=el("div","note modNote","✏️ Diese Einheit hast du angepasst. Zurück geht bei Tauschen einer Übung."); ul.append(n); } } }
+}
+{ const _rl=renderLive; renderLive=function(){ _rl(); try{ const run=liveRun(), b=$("liveBody"); if(run && b && !b.querySelector(".addEx")){ const a=el("button","addEx","+ Übung hinzufügen"); a.onclick=()=>openExPicker({mode:"add",u:run.u,live:true}); const fin=[...b.children].find(c=>c.querySelector && c.querySelector("#liveFinish, .finish")); fin ? fin.before(a) : b.append(a); } }catch(e){ console.error(e); } }; }
 
 // ---------- Start
 (async function(){
