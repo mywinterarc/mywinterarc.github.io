@@ -1198,6 +1198,17 @@ body.isDragging *{-webkit-touch-callout:none}
 .dayBox .tapE{cursor:pointer;border-radius:10px;padding:2px 4px;margin:0 -4px}.dayBox .tapE:active{background:var(--bg)}
 .dayBox .tapE::after{content:" ✎";color:var(--accent);font-size:13px}
 .trListHead{gap:10px}.trListHead .note{text-align:right}
+/* v2.0.102 Tage tauschen */
+.swapDays{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.sdRow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:12px 14px;color:var(--ink);animation:rise .4s var(--swift) both;animation-delay:calc(var(--i,0)*40ms)}
+.sdRow.best{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.sdRow > div{flex:1;display:flex;flex-direction:column;gap:5px;min-width:0}
+.sdRow small{color:var(--muted);font-size:12.5px}
+.sdChips{display:flex;flex-wrap:wrap;gap:5px}
+.sdChips .trChip{background:var(--bg);color:var(--ink);font-size:12px;padding:3px 8px;border-radius:999px}
+.sdChips .trChip.sore{background:color-mix(in srgb,#F59E0B 22%,transparent);color:#B45309}
+.sdGo{font-size:22px;color:var(--muted)}
+.sdRow:active{transform:scale(.98)}
 </style>
 </head>
 <body>
@@ -2212,7 +2223,7 @@ function widgetPush(){ clearTimeout(widgetT); widgetT=setTimeout(async ()=>{ try
   const js=JSON.stringify(Object.assign({},data,{u:0})); if(js===widgetLast) return; widgetLast=js;
   await Prefs.set({key:"widget", value:JSON.stringify(data)}); const WB=plug("WidgetBridge"); if(WB && WB.update) await WB.update();
 }catch(e){} }, 1500); }
-function render(){ try{ v98Sync(); }catch(e){ console.error(e); } try{ requestAnimationFrame(()=>{ try{ decorateTraining(); }catch(e){ console.error(e); } try{ v98Post(); }catch(e){ console.error(e); } try{ v99Sortables(); }catch(e){ console.error(e); } try{ v92Post(); }catch(e){ console.error(e); } }); }catch(e){} try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
+function render(){ try{ v98Sync(); }catch(e){ console.error(e); } try{ requestAnimationFrame(()=>{ try{ decorateTraining(); }catch(e){ console.error(e); } try{ v98Post(); }catch(e){ console.error(e); } try{ v99Sortables(); }catch(e){ console.error(e); } try{ v100Post(); }catch(e){ console.error(e); } try{ v92Post(); }catch(e){ console.error(e); } }); }catch(e){} try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
   applyPlan(); applyTheme(); STEP_GOAL = Number(P().stepGoal)||8000; widgetPush(); setTimeout(checkBadges, 50);
   const k = activeDay(), w = planWeek(k), ph = phase(w);
   $("dateLabel").textContent = (P().name ? "Hi "+P().name+" · " : "") + parseKey(k).toLocaleDateString("de-DE",{weekday:"long", day:"numeric", month:"long"}) + (k!==calToday() ? " · Schicht läuft noch" : "");
@@ -7114,6 +7125,33 @@ function openSetsEdit(e, name){
     if(cur){ const del=el("button","link danger","Aus diesem Training löschen"); del.onclick=()=>{ const arr=state.lifts[name]; arr.splice(arr.indexOf(cur),1); if(!arr.length) delete state.lifts[name]; e.ex=(e.ex||[]).filter(n=>n!==name); bumpEntry(e,cur,null); persist(); closeSheet(); render(); toast(name+" entfernt"); setTimeout(()=>openSessionEdit(e),260); }; p.append(del); }
   }, "sets");
 }
+
+// v2.0.102: Tage tauschen. Heute eine andere Einheit machen, die geplante rückt auf deren Platz.
+function seqSwaps(){ const s=state.train.swaps; return s && s.plan===P().plan ? s.list : []; }
+{ const _ap=applyPlan; applyPlan=function(){ _ap(); const L=seqSwaps(); if(L.length){ const q=SEQ.slice(); L.forEach(([a,b])=>{ if(a<q.length && b<q.length){ const t=q[a]; q[a]=q[b]; q[b]=t; } }); SEQ=q; } }; }
+{ const _ad=advance; advance=function(u,k,extra){ _ad(u,k,extra); if(state.train.swaps && state.train.idx % SEQ.length===0){ delete state.train.swaps; applyPlan(); } }; }
+function unitMuscles(u){ return UNITS[u] ? [...new Set(UNITS[u].s.map(([pk])=>PK_MUSCLE[pk]).filter(m=>m && m!=="Cardio"))] : []; }
+function recentMuscles(k){ const out={}; state.train.log.forEach(e=>{ if(e.u==="P"||e.skip||!UNITS[e.u]) return; const dd=Math.round((parseKey(k)-parseKey(e.d))/86400000); if(dd<1||dd>2) return; unitMuscles(e.u).forEach(m=>{ if(out[m]==null||dd<out[m]) out[m]=dd; }); }); return out; }
+function openDaySwap(){
+  if(liveRun()){ toast("Erst das laufende Training beenden"); return; }
+  const k=activeDay(), n=SEQ.length, cur=state.train.idx % n, cu=SEQ[cur], rec=recentMuscles(k);
+  openSheet(p=>{
+    sheetHead(p,"🔀 Heute was anderes");
+    p.append(el("div","note", cu==="P" ? "Heute wäre Ruhetag. Wähle eine Einheit, der Ruhetag rückt auf ihren Platz." : "Statt "+UNITS[cu].t+". Die rückt dann auf den Platz der Einheit, die du jetzt wählst. Es fällt nichts weg."));
+    const opts=[]; const seen=new Set([cu]); for(let s=1;s<n;s++){ const j=cur+s; if(j>=n) break; const u=SEQ[j]; if(u==="P"||seen.has(u)||!UNITS[u]) continue; seen.add(u); const ms=unitMuscles(u); const hit=ms.filter(m=>rec[m]!=null); opts.push({j,u,ms,hit,steps:s}); }
+    if(!opts.length){ p.append(el("div","note","In dieser Runde kommt keine andere Einheit mehr. Nach der nächsten Einheit geht es wieder.")); }
+    const load=o=>o.hit.reduce((t,m)=>t+(rec[m]===1?2:1),0)/Math.max(1,o.ms.length); const best=opts.filter(o=>!o.hit.length)[0] || (opts.length>1 ? opts.slice().sort((x,y)=>load(x)-load(y))[0] : null);
+    const box=el("div","swapDays"); opts.forEach((o,i)=>{ const b=el("button","sdRow"+(o===best?" best":"")); b.type="button"; b.style.setProperty("--i",i);
+      const t=el("div"); t.append(el("b",null,UNITS[o.u].t)); const ch=el("div","sdChips"); o.ms.slice(0,5).forEach(m=>ch.append(el("span","trChip"+(rec[m]!=null?" sore":""),(MUSCLE_EMO[m]||"")+" "+m))); t.append(ch);
+      t.append(el("small",null, o.hit.length ? (o===best?"👍 Am wenigsten belastet. ":"⚠️ ")+""+o.hit.join(", ")+" "+(Math.min(...o.hit.map(m=>rec[m]))===1?"gestern":"vorgestern")+" trainiert" : o===best ? "✓ Frisch, passt heute am besten" : "✓ Frische Muskeln"));
+      b.append(t, el("span","sdGo","›"));
+      b.onclick=()=>{ const s=state.train.swaps && state.train.swaps.plan===P().plan ? state.train.swaps : {plan:P().plan, list:[]}; s.list.push([cur,o.j]); state.train.swaps=s; applyPlan(); persist(); closeSheet(); buzz(10); render(); toast("Heute: "+UNITS[o.u].t, ()=>{ s.list.pop(); if(!s.list.length) delete state.train.swaps; applyPlan(); persist(); render(); }, "Rückgängig"); };
+      box.append(b); }); p.append(box);
+    if(Object.keys(rec).length) p.append(el("div","note","Orange markiert: in den letzten zwei Tagen trainiert. Bei Muskelkater lieber eine Einheit ohne diese Muskeln."));
+    if(seqSwaps().length){ const rs=el("button","link","Reihenfolge wieder wie im Plan"); rs.onclick=()=>{ delete state.train.swaps; applyPlan(); persist(); closeSheet(); render(); toast("Reihenfolge wieder wie im Plan"); }; p.append(rs); }
+  }, "daySwap");
+}
+function v100Post(){ const bx=$("unitBtns"); if(bx && !bx.querySelector(".swapDay") && !liveRun() && !state.train.log.some(e=>e.d===activeDay() && e.u!=="P")){ const b=el("button","btn ghost small swapDay","🔀 Heute was anderes"); b.onclick=openDaySwap; bx.append(b); } }
 
 // ---------- Start
 (async function(){
