@@ -1209,6 +1209,24 @@ body.isDragging *{-webkit-touch-callout:none}
 .sdChips .trChip.sore{background:color-mix(in srgb,#F59E0B 22%,transparent);color:#B45309}
 .sdGo{font-size:22px;color:var(--muted)}
 .sdRow:active{transform:scale(.98)}
+/* v2.0.103 Foto an Claude */
+.clSteps{display:flex;flex-direction:column;gap:8px;margin:6px 0 10px}
+.clStep{display:flex;align-items:center;gap:12px;animation:rise .45s var(--swift) both;animation-delay:calc(var(--i,0)*70ms)}
+.clStep > div{display:flex;flex-direction:column}.clStep small{color:var(--muted);font-size:12.5px}
+.clNo{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;background:linear-gradient(135deg,#D97757,#B4532F);flex:0 0 auto}
+.clThumb{display:block;width:100%;max-height:180px;object-fit:cover;border-radius:16px;margin:4px 0 10px}
+.clItems{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.clItem{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:9px 11px;animation:rise .4s var(--swift) both;animation-delay:calc(var(--i,0)*50ms);transition:opacity .2s}
+.clItem.off{opacity:.45}
+.clItem input[type=checkbox]{width:20px;height:20px;flex:0 0 auto}
+.clMid{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.clMid input{border:0;background:transparent;padding:2px 0;font-weight:700;font-size:15px;width:100%;color:var(--ink)}
+.clMid small{color:var(--muted);font-size:12.5px}
+.clGw{display:flex;align-items:center;gap:4px;flex:0 0 auto;color:var(--muted)}
+.clG{width:62px;text-align:center;padding:8px 4px}
+.clSum{font-weight:800;margin:4px 2px 8px;color:var(--accent)}
+.addTile.clTile{border-color:color-mix(in srgb,#D97757 55%,transparent);background:color-mix(in srgb,#D97757 8%,var(--panel))}
+.foodTxtRow{grid-template-columns:1fr auto auto}
 </style>
 </head>
 <body>
@@ -2223,7 +2241,7 @@ function widgetPush(){ clearTimeout(widgetT); widgetT=setTimeout(async ()=>{ try
   const js=JSON.stringify(Object.assign({},data,{u:0})); if(js===widgetLast) return; widgetLast=js;
   await Prefs.set({key:"widget", value:JSON.stringify(data)}); const WB=plug("WidgetBridge"); if(WB && WB.update) await WB.update();
 }catch(e){} }, 1500); }
-function render(){ try{ v98Sync(); }catch(e){ console.error(e); } try{ requestAnimationFrame(()=>{ try{ decorateTraining(); }catch(e){ console.error(e); } try{ v98Post(); }catch(e){ console.error(e); } try{ v99Sortables(); }catch(e){ console.error(e); } try{ v100Post(); }catch(e){ console.error(e); } try{ v92Post(); }catch(e){ console.error(e); } }); }catch(e){} try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
+function render(){ try{ v98Sync(); }catch(e){ console.error(e); } try{ requestAnimationFrame(()=>{ try{ decorateTraining(); }catch(e){ console.error(e); } try{ v98Post(); }catch(e){ console.error(e); } try{ v99Sortables(); }catch(e){ console.error(e); } try{ v100Post(); }catch(e){ console.error(e); } try{ v101Post(); }catch(e){ console.error(e); } try{ v92Post(); }catch(e){ console.error(e); } }); }catch(e){} try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
   applyPlan(); applyTheme(); STEP_GOAL = Number(P().stepGoal)||8000; widgetPush(); setTimeout(checkBadges, 50);
   const k = activeDay(), w = planWeek(k), ph = phase(w);
   $("dateLabel").textContent = (P().name ? "Hi "+P().name+" · " : "") + parseKey(k).toLocaleDateString("de-DE",{weekday:"long", day:"numeric", month:"long"}) + (k!==calToday() ? " · Schicht läuft noch" : "");
@@ -7152,6 +7170,74 @@ function openDaySwap(){
   }, "daySwap");
 }
 function v100Post(){ const bx=$("unitBtns"); if(bx && !bx.querySelector(".swapDay") && !liveRun() && !state.train.log.some(e=>e.d===activeDay() && e.u!=="P")){ const b=el("button","btn ghost small swapDay","🔀 Heute was anderes"); b.onclick=openDaySwap; bx.append(b); } }
+
+// v2.0.103: Foto an Claude. Foto und Frage teilen, Antwort kommt als WA Zeilen zurück und wird eingetragen.
+const WS = isNative ? plug("WinterShare") : null;
+const CL={ pend:null };
+try{ const s=JSON.parse(localStorage.getItem("wa_cl")||"null"); if(s && Date.now()-s.ts<1800000) CL.pend=s; }catch(e){}
+function clSet(v){ CL.pend=v; try{ if(v) localStorage.setItem("wa_cl",JSON.stringify(v)); else localStorage.removeItem("wa_cl"); }catch(e){} }
+function clPrompt(note){ return "Schau dir das Foto an. Es zeigt Essen oder eine Nährwerttabelle. Schätze für jedes Lebensmittel die Menge und die Nährwerte für genau diese Menge."+(note?" Hinweis von mir: "+note+".":"")+" Antworte NUR mit einem Codeblock, eine Zeile pro Lebensmittel, genau in diesem Format:\nWA|Name|Menge in g oder ml|kcal|Eiweiß g|Kohlenhydrate g|Fett g\nBeispiel:\nWA|Hähnchenbrust gebraten|150|248|46|0|5\nBei einer Nährwerttabelle: eine Zeile mit den Werten je 100 g und Menge 100. Zahlen ohne Einheit, Komma als Punkt. Keine Erklärung davor oder danach."; }
+function clParse(t){ const out=[]; String(t||"").split(/\r?\n/).forEach(l=>{ const m=l.replace(/[`*]/g,"").trim().match(/^WA\s*\|(.+)$/i); if(!m) return; const a=m[1].split("|").map(x=>x.trim()); if(a.length<3) return; const nn=x=>{ const v=parseFloat(String(x||"").replace(",",".").replace(/[^\d.]/g,"")); return isFinite(v)?v:0; }; const n=a[0]; if(!n) return; out.push({n, g:nn(a[1])||100, kcal:nn(a[2]), p:nn(a[3]), c:nn(a[4]), f:nn(a[5])}); }); return out; }
+function clImage(file){ return new Promise((res,rej)=>{ const img=new Image(), url=URL.createObjectURL(file); img.onload=()=>{ const m=1600, s=Math.min(1, m/Math.max(img.width,img.height)); const cv=document.createElement("canvas"); cv.width=Math.round(img.width*s); cv.height=Math.round(img.height*s); cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height); URL.revokeObjectURL(url); cv.toBlob(b=>{ if(!b){ rej(new Error("Bild")); return; } const fr=new FileReader(); fr.onload=()=>res({blob:b, b64:String(fr.result).split(",")[1], url:cv.toDataURL("image/jpeg",.5)}); fr.readAsDataURL(b); },"image/jpeg",.86); }; img.onerror=()=>rej(new Error("Bild")); img.src=url; }); }
+async function clClip(){ try{ if(WS){ const r=await WS.clip(); return r.text||""; } return await navigator.clipboard.readText(); }catch(e){ return ""; } }
+async function clCopy(t){ try{ if(WS){ await WS.copy({text:t}); return true; } await navigator.clipboard.writeText(t); return true; }catch(e){ return false; } }
+function openClaudePhoto(k, mealId){
+  k=k||activeDay();
+  openSheet(p=>{
+    sheetHead(p,"📸 Foto an Claude");
+    const steps=el("div","clSteps"); [["1","Foto machen","Essen oder Nährwerttabelle"],["2","An Claude schicken","Die Frage ist schon dabei"],["3","Antwort kopieren, zurückkommen","Winterarc trägt alles ein"]].forEach(([n,t,s],i)=>{ const r=el("div","clStep"); r.style.setProperty("--i",i); const tx=el("div"); tx.append(el("b",null,t), el("small",null,s)); r.append(el("span","clNo",n), tx); steps.append(r); }); p.append(steps);
+    const [ln,inote]=field("Hinweis für Claude (optional)","text",""); inote.placeholder="z. B. halbe Portion, ohne Soße"; p.append(ln);
+    const fi=el("input"); fi.type="file"; fi.accept="image/*"; fi.hidden=true; const fc=el("input"); fc.type="file"; fc.accept="image/*"; fc.setAttribute("capture","environment"); fc.hidden=true; p.append(fi,fc);
+    const row=el("div","row"); const b1=el("button","btn wide","📷 Foto aufnehmen"), b2=el("button","btn ghost","🖼 Galerie"); b1.onclick=()=>fc.click(); b2.onclick=()=>fi.click(); row.append(b1,b2); p.append(row);
+    const on=async e=>{ const f=e.target.files && e.target.files[0]; if(!f) return; toast("Bereite Foto vor …"); let im; try{ im=await clImage(f); }catch(x){ toast("Foto konnte nicht gelesen werden"); return; }
+      const text=clPrompt(inote.value.trim()); clSet({k, meal:mealId||null, ts:Date.now()}); await clCopy(text);
+      let how="manual";
+      try{ if(WS){ await WS.share({b64:im.b64, text, pkg:"com.anthropic.claude"}); how="shared"; }
+        else { const file=new File([im.blob],"essen.jpg",{type:"image/jpeg"}); if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], text}); how="shared"; } } }catch(x){ how = x && x.name==="AbortError" ? "abort" : "manual"; }
+      closeSheet(); setTimeout(()=>openClaudeWait(how, im.url, text),260); };
+    fi.addEventListener("change",on); fc.addEventListener("change",on);
+    p.append(el("div","note","Läuft über deine Claude App, kostet nichts extra. Das Foto verlässt Winterarc nur, wenn du es selbst abschickst."));
+    const pa=el("button","link","Ich habe schon eine Antwort kopiert"); pa.onclick=()=>{ clSet({k, meal:mealId||null, ts:Date.now()}); closeSheet(); setTimeout(()=>openClaudeWait("paste"),260); }; p.append(pa);
+  }, "clPhoto");
+}
+function openClaudeWait(how, thumb, text){
+  openSheet(p=>{
+    sheetHead(p,"Warte auf Claudes Antwort");
+    if(thumb){ const im=el("img","clThumb"); im.src=thumb; im.alt=""; p.append(im); }
+    if(how==="manual"){ p.append(el("div","alert","Teilen geht hier nicht direkt. Die Frage ist kopiert: Claude öffnen, Foto anhängen, Frage einfügen und abschicken.")); const a=el("a","btn ghost wide","Claude öffnen"); a.href="https://claude.ai/new"; a.target="_blank"; a.rel="noopener"; p.append(a); if(text){ const cp=el("button","link","Frage nochmal kopieren"); cp.onclick=async()=>{ toast(await clCopy(text)?"Frage kopiert":"Kopieren ging nicht"); }; p.append(cp); } }
+    else if(how==="shared") p.append(el("div","note","In Claude abschicken. Falls dort nur das Foto ankommt: einfach Einfügen tippen, die Frage ist kopiert."));
+    p.append(el("div","note","Wenn Claude geantwortet hat: Codeblock kopieren und hierher zurückkommen. Winterarc erkennt die Antwort von selbst."));
+    const b=el("button","btn wide","📋 Antwort einfügen"); const ta=el("textarea"); ta.rows=4; ta.placeholder="oder hier einfügen: WA|Name|150|248|46|0|5"; ta.hidden=true;
+    b.onclick=async()=>{ let t=ta.hidden?await clClip():ta.value; let it=clParse(t); if(!it.length && ta.hidden){ ta.hidden=false; ta.focus(); toast("Nichts Passendes in der Zwischenablage. Hier einfügen"); return; } if(!it.length){ toast("Keine Zeile mit WA| gefunden"); return; } closeSheet(); setTimeout(()=>openClaudeImport(it),260); };
+    p.append(b, ta);
+  }, "clWait");
+}
+function openClaudeImport(items){
+  const pend=CL.pend||{}; const k=pend.k||activeDay(); if(pend.meal) pendingMeal={id:pend.meal, ts:Date.now()};
+  items.forEach(i=>{ i.on=true; i.g0=i.g; });
+  openSheet(p=>{
+    sheetHead(p,"Von Claude erkannt"); const sum=el("div","clSum"); const box=el("div","clItems");
+    const upd=()=>{ const s=items.filter(i=>i.on).reduce((a,i)=>{ const q=i.g/i.g0; a[0]+=i.kcal*q; a[1]+=i.p*q; return a; },[0,0]); sum.textContent=items.filter(i=>i.on).length+" ausgewählt · "+de(Math.round(s[0]))+" kcal · "+Math.round(s[1])+" g Eiweiß"; };
+    items.forEach((i,ix)=>{ const r=el("div","clItem"); r.style.setProperty("--i",ix); const cb=el("input"); cb.type="checkbox"; cb.checked=true; const mid=el("div","clMid"); const nm=el("input"); nm.type="text"; nm.value=i.n; nm.oninput=()=>{ i.n=nm.value; }; const vals=el("small");
+      const g=el("input"); g.type="text"; g.inputMode="decimal"; g.value=fmtAmt(i.g); g.className="clG";
+      const dv=()=>{ const q=i.g/i.g0; vals.textContent=de(Math.round(i.kcal*q))+" kcal · P "+fmtAmt(Math.round(i.p*q*10)/10)+" · K "+fmtAmt(Math.round(i.c*q*10)/10)+" · F "+fmtAmt(Math.round(i.f*q*10)/10); };
+      g.oninput=()=>{ const v=num(g.value); if(v>0){ i.g=v; dv(); upd(); } }; cb.onchange=()=>{ i.on=cb.checked; r.classList.toggle("off",!i.on); upd(); };
+      mid.append(nm, vals); const gw=el("label","clGw"); gw.append(g, el("span",null,"g")); r.append(cb, mid, gw); dv(); box.append(r); });
+    upd(); p.append(el("div","note","Mengen sind geschätzt. Passe sie an, die Werte rechnen mit."), box, sum);
+    const ok=el("button","btn wide","Eintragen"); ok.onclick=()=>{ const L=items.filter(i=>i.on && i.n.trim()); if(!L.length){ toast("Nichts ausgewählt"); return; }
+      L.forEach(i=>{ const q=i.g/i.g0; addFoodQuiet(k,{n:i.n.trim()+" ("+fmtAmt(i.g)+" g)", kcal:Math.round(i.kcal*q), p:Math.round(i.p*q*10)/10, c:Math.round(i.c*q*10)/10, f:Math.round(i.f*q*10)/10, ai:true}); });
+      addMeta=null; pendingMeal=null; clSet(null); persist(); closeSheet(); render(); buzz(12); toast(L.length+(L.length===1?" Eintrag":" Einträge")+" von Claude eingetragen"); };
+    p.append(ok); injectMealPicker(k);
+  }, "clImport");
+}
+// Zurück in der App: Antwort von selbst erkennen
+async function clResume(){ if(!CL.pend || Date.now()-CL.pend.ts>1800000 || !WS) return; const sh=$("sheet"); const kind=($("pane")||{}).dataset && $("pane").dataset.kind; if(sh && !sh.hidden && kind!=="clWait") return; const it=clParse(await clClip()); if(!it.length) return; if(sh && !sh.hidden) closeSheet(); setTimeout(()=>openClaudeImport(it),280); }
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) setTimeout(clResume,400); });
+// Antwort aus Claude direkt in Winterarc geteilt
+{ const _cs=checkShared; checkShared=async function(){ if(Prefs){ try{ const r=await Prefs.get({key:"sharedText"}); if(r && r.value){ const o=JSON.parse(r.value); const it=clParse(o.t); if(it.length){ await Prefs.remove({key:"sharedText"}); if(!CL.pend) clSet({k:activeDay(), meal:null, ts:Date.now()}); openClaudeImport(it); return; } } }catch(e){} } return _cs(); }; }
+// Einstiege: im Plus Menü und oben bei Essen
+{ const _am=openAddMenu; openAddMenu=function(k,id){ _am(k,id); try{ const g=$("pane").querySelector(".addGrid"); if(g){ const b=el("button","addTile clTile"); b.append(el("span","ae","📸"), el("b",null,"Foto an Claude"), el("small",null,"Essen oder Etikett")); b.onclick=()=>{ closeSheet(); setTimeout(()=>openClaudePhoto(k,id),260); }; g.append(b); } }catch(e){ console.error(e); } }; }
+function v101Post(){ const r=document.querySelector(".foodTxtRow"); if(r && !r.querySelector("#aClaude")){ const b=el("button","micBtn","📸 Foto"); b.id="aClaude"; b.setAttribute("aria-label","Foto an Claude schicken"); b.onclick=()=>openClaudePhoto(activeDay()); r.append(b); } }
 
 // ---------- Start
 (async function(){
