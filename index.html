@@ -1271,6 +1271,9 @@ body.isDragging *{-webkit-touch-callout:none}
 :root[data-skin="sport"] .addEx{border-radius:14px}
 :root[data-skin="sport"] .headR > div:has(> #weekLabel){display:none!important}
 :root[data-skin="sport"] .foodTxtRow .btn{font-size:13px;padding:11px 10px}
+/* v2.0.107 Kopfzeile im Training ragte auf schmalen Handys über den Rand */
+@media (max-width:430px){body[data-tab="training"] .headR > div:has(> #weekLabel){display:none!important}}
+.headR{min-width:0}
 </style>
 </head>
 <body>
