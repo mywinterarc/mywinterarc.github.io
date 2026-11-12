@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Winterarc</title>
 <meta name="theme-color" content="#EEF1F4">
-<script>try{var wt=JSON.parse(localStorage.getItem("wa_theme")||"{}");if(wt.t&&wt.t!=="auto")document.documentElement.dataset.theme=wt.t;if(wt.a)document.documentElement.dataset.accent=wt.a;}catch(e){}</script>
+<script>try{var wt=JSON.parse(localStorage.getItem("wa_theme")||"{}");if(wt.t&&wt.t!=="auto")document.documentElement.dataset.theme=wt.t;if(wt.a)document.documentElement.dataset.accent=wt.a;if(wt.s)document.documentElement.dataset.skin=wt.s;}catch(e){}</script>
 <style>
 /* Layout: App mit festem Kopf, Inhalt in ruhigen Karten, Reiterleiste unten wie bei nativen Android Apps. */
 :root{
@@ -1227,6 +1227,50 @@ body.isDragging *{-webkit-touch-callout:none}
 .clSum{font-weight:800;margin:4px 2px 8px;color:var(--accent)}
 .addTile.clTile{border-color:color-mix(in srgb,#D97757 55%,transparent);background:color-mix(in srgb,#D97757 8%,var(--panel))}
 .foodTxtRow{grid-template-columns:1fr auto auto}
+/* v2.0.106 Aussehen „Sport“: schwarz, eine kräftige Farbe, große schmale Zahlen */
+:root[data-skin="sport"]{--bg:#000;--panel:#0E0F11;--line:#1F2227;--ink:#F3F5F6;--muted:#8B929B;--soft:#161A0C;--accent:#C6F432;--accent-ink:#0A0C05;--done:#C6F432;--shadow:none;--r:18px;--rs:12px}
+:root[data-skin="sport"]:not([data-accent]) body,:root[data-skin="sport"]:not([data-accent]) body[data-tab]{--accent:#C6F432;--accent-ink:#0A0C05;--soft:#161A0C;--tc:#C6F432}
+:root[data-skin="sport"] body::before{display:none}
+:root[data-skin="sport"] .card{background:var(--panel);border:1px solid var(--line)!important;box-shadow:none}
+:root[data-skin="sport"] .card.focus{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))!important}
+:root[data-skin="sport"] h3{font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;font-size:16px;font-weight:800}
+:root[data-skin="sport"] #pageTitle{background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--ink);font-family:var(--display);text-transform:uppercase;font-style:italic;font-weight:900;letter-spacing:.01em}
+:root[data-skin="sport"] #pageTitle::after{content:"";display:block;width:34px;height:4px;border-radius:2px;background:var(--accent);margin-top:2px}
+:root[data-skin="sport"] .label,:root[data-skin="sport"] .cat,:root[data-skin="sport"] .secLabel{letter-spacing:.12em;color:var(--muted)}
+:root[data-skin="sport"] .btn{font-family:var(--display);text-transform:uppercase;letter-spacing:.04em;font-weight:800;border-radius:14px}
+:root[data-skin="sport"] .btn.ghost{background:#16181B;border-color:#2A2E34;color:var(--ink)}
+:root[data-skin="sport"] .pill{background:#16181B;color:var(--ink);border:1px solid #23272D}
+:root[data-skin="sport"] .seg{background:#0E0F11;border:1px solid var(--line);border-radius:14px}
+:root[data-skin="sport"] .seg.pilled > .segPill{background:var(--accent);border-radius:11px;box-shadow:none}
+:root[data-skin="sport"] .seg.pilled > button[aria-pressed="true"]{color:var(--accent-ink)!important;font-weight:800}
+:root[data-skin="sport"] .seg:not(.pilled) button[aria-pressed="true"]{background:#23272D;color:var(--ink);box-shadow:none;border-radius:11px}
+:root[data-skin="sport"] .tile,:root[data-skin="sport"] .bubble,:root[data-skin="sport"] .addTile,:root[data-skin="sport"] #unitList .ex,:root[data-skin="sport"] .infoSec,:root[data-skin="sport"] .rcostSum,:root[data-skin="sport"] .profIc{background:#16181B}
+:root[data-skin="sport"] .tile b,:root[data-skin="sport"] .tile .v,:root[data-skin="sport"] .kcalBig{font-family:var(--display)}
+/* Heldenkarten: dunkel mit Farbkante statt Farbverlauf */
+:root[data-skin="sport"] .todayCard,:root[data-skin="sport"] .trHero{background:radial-gradient(120% 120% at 100% 0%,color-mix(in srgb,var(--accent) 20%,transparent) 0%,transparent 55%),#0E0F11!important;border:1px solid color-mix(in srgb,var(--accent) 40%,#1F2227);box-shadow:none!important;color:var(--ink)}
+:root[data-skin="sport"] .todayCard::after,:root[data-skin="sport"] .todayCard::before,:root[data-skin="sport"] .todayCard .shine{display:none}
+:root[data-skin="sport"] .todayCard::before{display:block;content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;height:auto;border-radius:0 4px 4px 0;background:var(--accent)}
+:root[data-skin="sport"] .todayCard h2,:root[data-skin="sport"] .trHero .trTitle{font-family:var(--display);text-transform:uppercase;font-style:italic;font-weight:900;color:var(--ink);letter-spacing:.01em}
+:root[data-skin="sport"] .todayCard .tl,:root[data-skin="sport"] .trHero .trLab{color:var(--accent);opacity:1}
+:root[data-skin="sport"] .todayCard .wbtn,:root[data-skin="sport"] .trBtns .btn:not(.ghost){background:var(--accent)!important;color:var(--accent-ink)!important;box-shadow:none;border-radius:14px;font-family:var(--display);text-transform:uppercase;letter-spacing:.04em}
+:root[data-skin="sport"] .todayCard .gbtn,:root[data-skin="sport"] .trBtns .btn.ghost{background:#16181B!important;border:1px solid #2A2E34!important;color:var(--ink)!important;border-radius:14px}
+:root[data-skin="sport"] .trChip{background:#16181B;border:1px solid #23272D;-webkit-backdrop-filter:none;backdrop-filter:none}
+:root[data-skin="sport"] .trHero::after{display:none}
+:root[data-skin="sport"] .micBtn{background:#16181B;border:1px solid #2A2E34;box-shadow:none;border-radius:14px;color:var(--ink)}
+:root[data-skin="sport"] .hint92{background:#0E0F11}
+/* Navigation */
+:root[data-skin="sport"] nav.tabs{background:rgba(8,9,10,.94);border:1px solid var(--line);border-radius:20px;box-shadow:none}
+:root[data-skin="sport"] nav.tabs button{color:#6E757E;font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:11px}
+:root[data-skin="sport"] nav.tabs button[aria-selected="true"]{color:var(--accent)}
+:root[data-skin="sport"] nav.tabs button[aria-selected="true"] svg{background:transparent}
+:root[data-skin="sport"] nav.tabs .navPill{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+:root[data-skin="sport"] .profBtn .avL{background:var(--accent);color:var(--accent-ink);box-shadow:none}
+:root[data-skin="sport"] .toast{background:#F3F5F6;color:#000}
+:root[data-skin="sport"] .sheet .pane{background:#0B0C0E;border-top:1px solid var(--line)}
+:root[data-skin="sport"] input,:root[data-skin="sport"] select,:root[data-skin="sport"] textarea{background:#16181B;border-color:#2A2E34;color:var(--ink)}
+:root[data-skin="sport"] .addEx{border-radius:14px}
+:root[data-skin="sport"] .headR > div:has(> #weekLabel){display:none!important}
+:root[data-skin="sport"] .foodTxtRow .btn{font-size:13px;padding:11px 10px}
 </style>
 </head>
 <body>
@@ -2242,7 +2286,7 @@ function widgetPush(){ clearTimeout(widgetT); widgetT=setTimeout(async ()=>{ try
   await Prefs.set({key:"widget", value:JSON.stringify(data)}); const WB=plug("WidgetBridge"); if(WB && WB.update) await WB.update();
 }catch(e){} }, 1500); }
 function render(){ try{ v98Sync(); }catch(e){ console.error(e); } try{ requestAnimationFrame(()=>{ try{ decorateTraining(); }catch(e){ console.error(e); } try{ v98Post(); }catch(e){ console.error(e); } try{ v99Sortables(); }catch(e){ console.error(e); } try{ v100Post(); }catch(e){ console.error(e); } try{ v101Post(); }catch(e){ console.error(e); } try{ v92Post(); }catch(e){ console.error(e); } }); }catch(e){} try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
-  applyPlan(); applyTheme(); STEP_GOAL = Number(P().stepGoal)||8000; widgetPush(); setTimeout(checkBadges, 50);
+  try{ v103Once(); }catch(e){} applyPlan(); applyTheme(); STEP_GOAL = Number(P().stepGoal)||8000; widgetPush(); setTimeout(checkBadges, 50);
   const k = activeDay(), w = planWeek(k), ph = phase(w);
   $("dateLabel").textContent = (P().name ? "Hi "+P().name+" · " : "") + parseKey(k).toLocaleDateString("de-DE",{weekday:"long", day:"numeric", month:"long"}) + (k!==calToday() ? " · Schicht läuft noch" : "");
   $("weekLabel").textContent = w===0 ? "Start in "+dayDiff(k, startKey())+" Tagen" : "Woche "+w+" von "+(P().weeks||22);
@@ -7238,6 +7282,11 @@ document.addEventListener("visibilitychange",()=>{ if(!document.hidden) setTimeo
 // Einstiege: im Plus Menü und oben bei Essen
 { const _am=openAddMenu; openAddMenu=function(k,id){ _am(k,id); try{ const g=$("pane").querySelector(".addGrid"); if(g){ const b=el("button","addTile clTile"); b.append(el("span","ae","📸"), el("b",null,"Foto an Claude"), el("small",null,"Essen oder Etikett")); b.onclick=()=>{ closeSheet(); setTimeout(()=>openClaudePhoto(k,id),260); }; g.append(b); } }catch(e){ console.error(e); } }; }
 function v101Post(){ const r=document.querySelector(".foodTxtRow"); if(r && !r.querySelector("#aClaude")){ const b=el("button","micBtn","📸 Foto"); b.id="aClaude"; b.setAttribute("aria-label","Foto an Claude schicken"); b.onclick=()=>openClaudePhoto(activeDay()); r.append(b); } }
+
+// v2.0.106: Aussehen „Sport“
+THEMES.push(["sport","Sport","linear-gradient(135deg,#000 55%,#C6F432 55%)"]);
+{ const _at=applyTheme; applyTheme=function(){ _at(); const h=document.documentElement; if((P().theme||"auto")==="sport"){ h.dataset.theme="oled"; h.dataset.skin="sport"; const m=document.querySelector('meta[name="theme-color"]'); if(m) m.content="#000000"; try{ localStorage.setItem("wa_theme",JSON.stringify({t:"oled",a:P().accent||"",s:"sport"})); }catch(e){} } else delete h.dataset.skin; }; }
+function v103Once(){ if(state.skin103) return; state.skin103=true; if(P().name){ P().theme="sport"; applyTheme(); persist(); setTimeout(()=>toast("Neues Aussehen: Sport. Ändern im Profil unter Einstellungen"),1800); } }
 
 // ---------- Start
 (async function(){
