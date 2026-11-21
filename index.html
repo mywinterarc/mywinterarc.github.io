@@ -1915,6 +1915,21 @@ const RECIPES = [
   {id:"ruehrei", n:"Protein Rührei mit Toast", por:1, kcal:543, p:48, c:30, f:26,
    z:[[3, "Stk", "Eier", "Kühlregal"], [150, "ml", "Eiklar", "Kühlregal"], [50, "g", "Hüttenkäse", "Kühlregal"], [5, "ml", "Rapsöl", "Vorrat"], [60, "g", "Körner Toast", "Brot"], [5, "g", "Schnittlauch", "Gemüse"]],
    st:["3 Eier, 150 ml Eiklar und 50 g Hüttenkäse mit Salz und Pfeffer verquirlen.", "Pfanne mit 5 ml Rapsöl auf mittlere Hitze. Masse rein und mit dem Pfannenwender langsam von außen nach innen schieben, bis sie gerade fest ist. Nicht zu heiß, dann bleibt es cremig.", "2 Scheiben Toast rösten, Rührei drauf, Schnittlauch drüber.", "Tipp: Eiklar gibt es als Flasche im Kühlregal. Viel Eiweiß fast ohne Fett, hält offen ein paar Tage."]},
+  {id:"quarkbowl", n:"Magerquark Bowl mit Beeren", por:1, kcal:378, p:50, c:32, f:2,
+   z:[[400,"g","Magerquark","Kühlregal"],[200,"g","TK Beeren","Tiefkühl"],[10,"g","Flohsamenschalen","Vorrat"]],
+   st:["TK Beeren 2 Minuten in der Mikrowelle antauen oder über Nacht im Kühlschrank auftauen lassen.","400 g Magerquark mit etwas Wasser oder Milch cremig rühren, 10 g Flohsamenschalen unterrühren und 5 Minuten quellen lassen. Das macht richtig satt.","Beeren samt Saft drübergeben. Wer es süßer mag: Süßstoff oder ein Teelöffel Honig.","Weniger Hunger: 300 g Quark nehmen, unter Menge auf ¾ gehen oder die Zutat antippen."]},
+  {id:"bologneselight", n:"Bolognese light mit Kaisergemüse", por:2, box:true, kcal:596, p:42, c:83, f:10,
+   z:[[200,"g","Nudeln","Vorrat"],[200,"g","Rinderhack light 5 %","Kühlregal"],[200,"g","Tomatensoße (z. B. Barilla)","Vorrat"],[200,"g","Kaisergemüse TK","Tiefkühl"],[30,"g","Gouda light gerieben","Kühlregal"]],
+   st:["200 g Nudeln nach Packung kochen. Statt Nudeln geht auch Reis.","Light Hack in einer beschichteten Pfanne ohne Öl krümelig braten, mit Salz, Pfeffer und Paprika würzen.","Kaisergemüse dazu und 5 Minuten mitbraten, dann 200 g Tomatensoße rein und kurz köcheln.","Auf 2 Boxen verteilen, je 15 g Gouda drüber. Hält 3 Tage im Kühlschrank."]},
+  {id:"strammermax", n:"Strammer Max light", por:1, kcal:461, p:40, c:26, f:22,
+   z:[[50,"g","Toastbrot","Brot"],[3,"Stk","Eier","Kühlregal"],[80,"g","Hähnchenbrust Aufschnitt","Kühlregal"],[3,"g","Butter","Kühlregal"]],
+   st:["2 Scheiben Toast rösten und mit Hähnchenbrust belegen.","3 Eier in wenig Butter als Spiegelei braten, mit Salz und Pfeffer würzen.","Spiegeleier auf die Toasts legen. Mehr Hunger: Menge auf 1½ stellen."]},
+  {id:"preporridge", n:"Pre Workout Porridge", por:1, kcal:502, p:34, c:71, f:7,
+   z:[[75,"g","Haferflocken","Vorrat"],[30,"g","Whey","Vorrat"],[100,"g","TK Beeren","Tiefkühl"],[1,"EL","Honig","Vorrat"]],
+   st:["75 g Haferflocken mit 200 ml Wasser 2 Minuten in der Mikrowelle oder im Topf kochen.","Kurz abkühlen lassen, dann 30 g Whey einrühren. Zu heiß klumpt das Pulver.","Beeren und 1 EL Honig drauf. Am besten 1 bis 2 Stunden vor dem Training."]},
+  {id:"eiernudeln", n:"Eier Nudeln mit Tomatensoße", por:1, kcal:667, p:34, c:81, f:23,
+   z:[[100,"g","Nudeln","Vorrat"],[3,"Stk","Eier","Kühlregal"],[100,"g","Tomatensoße (z. B. Barilla)","Vorrat"],[5,"g","Butter","Kühlregal"]],
+   st:["100 g Nudeln nach Packung kochen und abgießen.","5 g Butter in der Pfanne schmelzen, Nudeln kurz anbraten.","3 Eier verquirlen, salzen, über die Nudeln geben und unter Rühren stocken lassen.","100 g Tomatensoße dazu, kurz warm werden lassen. Pfeffer und etwas Parmesan passen gut."]},
   {id:"pancake", n:"Protein Pancakes", por:1, kcal:584, p:46, c:62, f:15,
    z:[[50, "g", "Haferflocken", "Vorrat"], [1, "Stk", "Banane", "Gemüse"], [2, "Stk", "Eier", "Kühlregal"], [150, "g", "Magerquark", "Kühlregal"], [1, "TL", "Backpulver", "Vorrat"], [10, "g", "Whey", "Vorrat"]],
    st:["Alles mit dem Pürierstab oder Mixer glatt mixen, 5 Minuten quellen lassen.", "Beschichtete Pfanne mit etwas Öl auf mittlere Hitze, kleine Pancakes ausbacken (ca. 2 Min. pro Seite).", "Mit Beeren oder etwas Skyr belegen."]},
@@ -6889,7 +6904,7 @@ function decorateRecipes(){
 }
 
 // v2.0.96: Rezepte anpassen. Zutat ersetzen, Menge ändern, weglassen, eigene dazu.
-Object.assign(ING, {"Eiklar":[48,11,0.7,0.2],"Körner Toast":[260,9,43,4.5],"Schnittlauch":[0,0,0,0],"Sprudelwasser":[0,0,0,0],"Sprite Zero":[1,0,0.1,0],"Zucker":[400,0,100,0],"Xylit":[240,0,100,0],"Vanillezucker":[400,0,100,0],"Weizenmehl 405":[340,10,72,1],"Weizenmehl 550":[340,11,71,1.2],"Sonnenblumenöl":[828,0,0,92],"Butter":[740,0.7,0.6,82],"Frischkäse Doppelrahm (Philadelphia)":[235,5.4,4.3,21.5],"Gehacktes gemischt":[260,17,0,21],"Möhren":[25,0.6,5,0.1],"Chili Beans":[330,19,45,4],"Weiße Bohnen":[220,17,32,1],"Natron":[0,0,0,0],"Honig":[304,0.4,80,0]});
+Object.assign(ING, {"Flohsamenschalen":[200,2,4,0.6],"Rinderhack light 5 %":[120,21,0,4.5],"Tomatensoße (z. B. Barilla)":[50,1.6,8,1],"Gouda light gerieben":[275,30,0,17],"Kaisergemüse TK":[30,2,4,0.3],"Hähnchenbrust Aufschnitt":[105,21,1,2],"Toastbrot":[260,8,48,3.5],"Eiklar":[48,11,0.7,0.2],"Körner Toast":[260,9,43,4.5],"Schnittlauch":[0,0,0,0],"Sprudelwasser":[0,0,0,0],"Sprite Zero":[1,0,0.1,0],"Zucker":[400,0,100,0],"Xylit":[240,0,100,0],"Vanillezucker":[400,0,100,0],"Weizenmehl 405":[340,10,72,1],"Weizenmehl 550":[340,11,71,1.2],"Sonnenblumenöl":[828,0,0,92],"Butter":[740,0.7,0.6,82],"Frischkäse Doppelrahm (Philadelphia)":[235,5.4,4.3,21.5],"Gehacktes gemischt":[260,17,0,21],"Möhren":[25,0.6,5,0.1],"Chili Beans":[330,19,45,4],"Weiße Bohnen":[220,17,32,1],"Natron":[0,0,0,0],"Honig":[304,0.4,80,0]});
 // Ersatz: [Muster, [[neu, Faktor, Hinweis, Einheit]]]
 const SUBS=[
   [/fanta|cola zero|limo/i,[["Sprudelwasser",1,"gleich luftig, ohne Orange"],["Sprite Zero",1,"luftig, Zitrone"],["Milch",1,"saftiger, etwas mehr kcal"],["Wasser",1,"etwas kompakter"]]],
@@ -6925,7 +6940,7 @@ function recChanged(r){ const id=r.id; return !!((state.recScale||{})[id] || ((s
 recZ = function(r){ const {s}=recAdj(r); return recEff(r).filter(x=>!x.off).map(x=>[x.a*s, x.u, x.n, x.cat]); };
 recMacros = function(r){ const b=recBase(r); const id=r.id; if(!(((state.recOff||{})[id]||[]).length || Object.keys((state.recSub||{})[id]||{}).length || ((state.recAdd||{})[id]||[]).length)) return b;
   const now=sumIng(recEff(r).filter(x=>!x.off).map(x=>({a:x.a,u:x.u,n:x.n}))), was=sumIng(r.z.map(([a,u,n])=>({a,u,n}))); const d=(k,ix)=>Math.max(0,Math.round(b[k]+(now[ix]-was[ix])/b.por)); return {kcal:d("kcal",0),p:d("p",1),c:d("c",2),f:d("f",3),por:b.por}; };
-recipeCost = function(r){ const {s}=recAdj(r); const rows=recEff(r).map(x=>({n:x.n, off:x.off, c:ingCost(x.a*s,x.u,x.n)})); const have=rows.filter(x=>x.c && !x.off); if(!have.length) return null; const tot=have.reduce((t,x)=>t+x.c.eur,0); const por=(((state.recipePor||{})[r.id])||r.por||1)*s; return {tot, per:tot/por, por, rows, miss:rows.filter(x=>!x.c && !x.off).map(x=>x.n)}; };
+recipeCost = function(r){ const {s}=recAdj(r); const rows=recEff(r).map(x=>({n:x.n, off:x.off, c:ingCost(x.a*s,x.u,x.n)})); const have=rows.filter(x=>x.c && !x.off); if(!have.length) return null; const tot=have.reduce((t,x)=>t+x.c.eur,0); const pb=((state.recipePor||{})[r.id])||r.por||1; const por = (pb===1 && !r.box && !r.unit) ? 1 : pb*s; return {tot, per:tot/por, por, rows, miss:rows.filter(x=>!x.c && !x.off).map(x=>x.n)}; };
 function setSub(r,i,v){ state.recSub=state.recSub||{}; const m=state.recSub[r.id]||{}; if(v) m[i]=v; else delete m[i]; if(Object.keys(m).length) state.recSub[r.id]=m; else delete state.recSub[r.id]; }
 function setOff(r,i,on){ state.recOff=state.recOff||{}; const L=new Set(state.recOff[r.id]||[]); if(on) L.add(i); else L.delete(i); if(L.size) state.recOff[r.id]=[...L].sort((x,y)=>x-y); else delete state.recOff[r.id]; }
 function openIngEdit(r, x){
@@ -6980,8 +6995,8 @@ decorateRecipes = function(){
   const box=$("recipes"); if(!box) return; const list=allRecipes();
   box.querySelectorAll("details.recipe").forEach(d=>{
     if(d.dataset.dec) return; d.dataset.dec="1"; const sp=d.querySelector(".rhead > div > span"); const nm=sp && sp.firstChild && sp.firstChild.textContent; const r=list.find(x=>x.n===nm); if(!r || !r.z) return;
-    const {s}=recAdj(r), m=recMacros(r), P=m.por*s, changed=recChanged(r), eff=recEff(r);
-    const mac=d.querySelector(".macros"); if(mac){ const ptxt = r.box ? fmtAmt(P)+" Boxen, je Box: " : r.unit ? fmtAmt(P)+" "+r.unit+"e, je "+r.unit+": " : P===1 ? "1 Portion: " : fmtAmt(P)+" Portionen, je Portion: "; mac.textContent=ptxt+macroTxt(m); if(changed){ mac.classList.add("recChg"); sp.append(el("span","pill rmod","angepasst")); } }
+    const {s}=recAdj(r); let m=recMacros(r), P=m.por*s, changed=recChanged(r), eff=recEff(r);
+    const mac=d.querySelector(".macros"); if(mac){ const one1 = !r.box && !r.unit && m.por===1; if(one1 && s!==1){ m=Object.assign({},m,{kcal:Math.round(m.kcal*s),p:Math.round(m.p*s),c:Math.round(m.c*s),f:Math.round(m.f*s)}); } const ptxt = one1 ? (s===1?"1 Portion: ":fmtAmt(s)+"× Portion: ") : r.box ? fmtAmt(P)+" Boxen, je Box: " : r.unit ? fmtAmt(P)+" "+r.unit+"e, je "+r.unit+": " : P===1 ? "1 Portion: " : fmtAmt(P)+" Portionen, je Portion: "; mac.textContent=ptxt+macroTxt(m); if(changed){ mac.classList.add("recChg"); sp.append(el("span","pill rmod","angepasst")); } }
     const c=recipeCost(r); if(mac && c) mac.after(el("div","rcost","💶 "+eur(c.per)+" pro "+(r.box?"Box":r.unit||"Portion")+" · "+eur(c.tot)+" gesamt"));
     const tools=el("div","recTools"); const sg=el("div","seg recSeg"); [[0.5,"½"],[1,"1×"],[1.5,"1½"],[2,"2×"]].forEach(([v,l])=>{ const b=el("button",null,l); b.type="button"; b.setAttribute("aria-pressed", v===s?"true":"false"); b.onclick=()=>{ state.recScale=state.recScale||{}; if(v===1) delete state.recScale[r.id]; else state.recScale[r.id]=v; persist(); buzz(5); renderRecipes(); }; sg.append(b); });
     tools.append(el("span","label","Menge"), sg);
