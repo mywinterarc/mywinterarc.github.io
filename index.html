@@ -1274,6 +1274,13 @@ body.isDragging *{-webkit-touch-callout:none}
 /* v2.0.107 Kopfzeile im Training ragte auf schmalen Handys über den Rand */
 @media (max-width:430px){body[data-tab="training"] .headR > div:has(> #weekLabel){display:none!important}}
 .headR{min-width:0}
+/* v2.0.111 Schichtzeiten */
+#v106Card .shRow{display:grid;grid-template-columns:48px 1fr auto 1fr 28px;gap:6px;align-items:center;margin-top:6px}
+#v106Card .shRow input{width:100%;text-align:center;font-size:16px;padding:9px 4px}
+#v106Card .shOne{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+#v106Card .shList,.shQuick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.shQuick .pill,#v106Card .shList .pill{border:1px solid var(--line);cursor:pointer;padding:7px 12px;font-size:13px}
+.shCard .shDayT{display:block;margin-top:8px;font-weight:700}
 </style>
 </head>
 <body>
@@ -2303,7 +2310,7 @@ function widgetPush(){ clearTimeout(widgetT); widgetT=setTimeout(async ()=>{ try
   const js=JSON.stringify(Object.assign({},data,{u:0})); if(js===widgetLast) return; widgetLast=js;
   await Prefs.set({key:"widget", value:JSON.stringify(data)}); const WB=plug("WidgetBridge"); if(WB && WB.update) await WB.update();
 }catch(e){} }, 1500); }
-function render(){ try{ v98Sync(); }catch(e){ console.error(e); } try{ requestAnimationFrame(()=>{ try{ decorateTraining(); }catch(e){ console.error(e); } try{ v98Post(); }catch(e){ console.error(e); } try{ v99Sortables(); }catch(e){ console.error(e); } try{ v100Post(); }catch(e){ console.error(e); } try{ v101Post(); }catch(e){ console.error(e); } try{ v92Post(); }catch(e){ console.error(e); } }); }catch(e){} try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
+function render(){ try{ v106Labels(); }catch(e){ console.error(e); } try{ v98Sync(); }catch(e){ console.error(e); } try{ requestAnimationFrame(()=>{ try{ decorateTraining(); }catch(e){ console.error(e); } try{ v98Post(); }catch(e){ console.error(e); } try{ v99Sortables(); }catch(e){ console.error(e); } try{ v100Post(); }catch(e){ console.error(e); } try{ v101Post(); }catch(e){ console.error(e); } try{ v106Post(); }catch(e){ console.error(e); } try{ v92Post(); }catch(e){ console.error(e); } }); }catch(e){} try{ renderTrainRules(); }catch(e){} try{ renderSleepCard(); }catch(e){} try{ renderAlarmCard(); }catch(e){}
   try{ v103Once(); }catch(e){} applyPlan(); applyTheme(); STEP_GOAL = Number(P().stepGoal)||8000; widgetPush(); setTimeout(checkBadges, 50);
   const k = activeDay(), w = planWeek(k), ph = phase(w);
   $("dateLabel").textContent = (P().name ? "Hi "+P().name+" · " : "") + parseKey(k).toLocaleDateString("de-DE",{weekday:"long", day:"numeric", month:"long"}) + (k!==calToday() ? " · Schicht läuft noch" : "");
@@ -7305,6 +7312,68 @@ function v101Post(){ const r=document.querySelector(".foodTxtRow"); if(r && !r.q
 THEMES.push(["sport","Sport","linear-gradient(135deg,#000 55%,#C6F432 55%)"]);
 { const _at=applyTheme; applyTheme=function(){ _at(); const h=document.documentElement; if((P().theme||"auto")==="sport"){ h.dataset.theme="oled"; h.dataset.skin="sport"; const m=document.querySelector('meta[name="theme-color"]'); if(m) m.content="#000000"; try{ localStorage.setItem("wa_theme",JSON.stringify({t:"oled",a:P().accent||"",s:"sport"})); }catch(e){} } else delete h.dataset.skin; }; }
 function v103Once(){ if(state.skin103) return; state.skin103=true; if(P().name){ P().theme="sport"; applyTheme(); persist(); setTimeout(()=>toast("Neues Aussehen: Sport. Ändern im Profil unter Einstellungen"),1800); } }
+
+// v2.0.111: Schichtzeiten anpassen. Je Schichtart (z. B. Früh 8 bis 17) und für einzelne Tage.
+const DEF_T={frueh:[360,840],spaet:[840,1320],nacht:[1320,1800]};
+const mClock=m=>{ m=((Math.round(m)%1440)+1440)%1440; return pad(Math.floor(m/60))+":"+pad(m%60); };
+const mShort=m=>{ m=((Math.round(m)%1440)+1440)%1440; const h=Math.floor(m/60), mi=m%60; return mi?h+":"+pad(mi):String(h); };
+function typeT(sh){ const t=(P().shiftT||{})[sh]; return t||DEF_T[sh]; }
+function dayT(k,sh){ const o=(state.shiftT||{})[k]; return (o && DEF_T[sh]) ? o : typeT(sh); }
+function normT(s,e){ s=toMin(s); e=toMin(e); if(s==null||e==null) return null; if(e<=s) e+=1440; return [s,e]; }
+wakeFor=function(k,sh){ if(state.wake[k]) return state.wake[k]; const w=toMin(P().wake[sh]||"07:00"); const d=DEF_T[sh]&&(state.shiftT||{})[k] ? dayT(k,sh)[0]-typeT(sh)[0] : 0; return mClock(w+d); };
+timeline=function(k, sh){
+  const base=parseKey(k), w=toMin(wakeFor(k,sh)), out=[]; const W=DEF_T[sh], T=W?dayT(k,sh):null;
+  TPL[sh].forEach(([off,label,key],i)=>{
+    if(key==="suppM" || key==="suppE"){ label = suppLabel(key==="suppM"?"M":"E", k); if(!label) return; }
+    if(key==="steps") label = "Schritte Check: "+STEP_GOAL.toLocaleString("de-DE")+" schon voll? Sonst 20 Minuten gehen";
+    let m;
+    if(typeof off==="string" && W){ let m0=toMin(off.slice(1)); if(sh==="nacht" && m0<720) m0+=1440; if(sh==="spaet" && m0<240) m0+=1440;
+      m = m0<=W[0] ? m0+(T[0]-W[0]) : m0>=W[1] ? m0+(T[1]-W[1]) : Math.round((T[0]+(m0-W[0])*(T[1]-T[0])/(W[1]-W[0]))/5)*5;
+      if(key==="go") label=label.replace(/\(\d+ bis \d+ Uhr\)/,"("+mShort(T[0])+" bis "+mShort(T[1])+" Uhr)");
+      if(key==="home") label=label.replace(/gegen \d\d:\d\d/,"gegen "+mClock(T[1]+30));
+    } else { m = typeof off==="string" ? toMin(off.slice(1)) : w+off; if(typeof off==="string" && m < w-60) m += 1440; }
+    const d=new Date(base); d.setHours(0, m, 0, 0);
+    out.push({t:hm(d), label, key, i, at:d, info: key==="go"||key==="home"});
+  });
+  return out.sort((a,b)=>a.at-b.at);
+};
+function v106Labels(){ SHIFT_BTNS.forEach(b=>{ if(DEF_T[b[0]]){ const t=typeT(b[0]); b[2]=mShort(t[0])+" bis "+mShort(t[1]); } }); }
+function v106Save(){ persist(); try{ scheduleAll(); }catch(e){} render(); }
+function openDayShift(k){
+  const sh=state.shift[k]; if(!DEF_T[sh]){ toast("An dem Tag ist keine Schicht eingetragen"); return; }
+  const cur=dayT(k,sh), has=!!(state.shiftT||{})[k];
+  openSheet(p=>{ sheetHead(p,"🕗 "+SHIFT_NAMES[sh]+" am "+fmtDate(k));
+    p.append(el("div","note","Nur für diesen Tag. Tagesablauf, Essen, Koffeinstopp, Schlafenszeit und Wecker richten sich danach."));
+    const g=el("div","grid2"); const [la,ia]=field("Beginn","time",mClock(cur[0])), [lb,ib]=field("Ende","time",mClock(cur[1])); g.append(la,lb); p.append(g);
+    const ql=el("div","shQuick"); [[6,14],[7,16],[8,17],[9,18],[14,22],[22,6]].forEach(([a,b])=>{ const x=el("button","pill",a+" bis "+b); x.type="button"; x.onclick=()=>{ ia.value=pad(a)+":00"; ib.value=pad(b)+":00"; buzz(5); }; ql.append(x); }); p.append(ql);
+    const ok=el("button","btn wide","Übernehmen"); ok.onclick=()=>{ const t=normT(ia.value,ib.value); if(!t){ toast("Bitte Beginn und Ende eintragen"); return; } state.shiftT=state.shiftT||{}; const ty=typeT(sh); if(t[0]===ty[0]&&t[1]===ty[1]) delete state.shiftT[k]; else state.shiftT[k]=t; closeSheet(); v106Save(); buzz(10); toast(SHIFT_NAMES[sh]+" am "+fmtDate(k)+": "+mShort(t[0])+" bis "+mShort(t[1])+" Uhr"); };
+    p.append(ok);
+    if(has){ const r=el("button","link","Wieder normale Zeit ("+mShort(typeT(sh)[0])+" bis "+mShort(typeT(sh)[1])+")"); r.onclick=()=>{ delete state.shiftT[k]; closeSheet(); v106Save(); toast("Normale Zeit"); }; p.append(r); }
+  }, "dayShift");
+}
+function renderShiftTimesCard(){
+  const wk=$("p-woche"), wl=$("weekList") && $("weekList").closest(".card"); if(!wk||!wl) return;
+  let c=$("v106Card"); if(!c){ c=el("div","card"); c.id="v106Card"; c.dataset.wseg="schicht"; wl.after(c); }
+  c.innerHTML=""; const h=el("h3",null,"🕗 Schichtzeiten"); c.append(h);
+  c.append(el("div","note","Gilt für alle Tage mit dieser Schicht. Die Aufstehzeit verschiebt sich gleich mit."));
+  [["frueh","Früh"],["spaet","Spät"],["nacht","Nacht"]].forEach(([sh,n])=>{ const t=typeT(sh), r=el("div","shRow"); const changed=(P().shiftT||{})[sh];
+    const a=el("input"); a.type="time"; a.value=mClock(t[0]); const b=el("input"); b.type="time"; b.value=mClock(t[1]);
+    const save=()=>{ const nt=normT(a.value,b.value); if(!nt) return; const old=typeT(sh); P().shiftT=P().shiftT||{}; if(nt[0]===DEF_T[sh][0]&&nt[1]===DEF_T[sh][1]) delete P().shiftT[sh]; else P().shiftT[sh]=nt;
+      const d=nt[0]-old[0]; if(d && P().wake[sh]){ P().wake[sh]=mClock(toMin(P().wake[sh])+d); } v106Save(); toast(SHIFT_NAMES[sh]+": "+mShort(nt[0])+" bis "+mShort(nt[1])+" Uhr"+(d&&P().wake[sh]?", aufstehen "+P().wake[sh]:"")); };
+    a.onchange=save; b.onchange=save;
+    r.append(el("b",null,n), a, el("span","note","bis"), b); if(changed){ const x=el("button","zx","↺"); x.type="button"; x.title="Standard"; x.onclick=()=>{ const old=typeT(sh); delete P().shiftT[sh]; const d=DEF_T[sh][0]-old[0]; if(d&&P().wake[sh]) P().wake[sh]=mClock(toMin(P().wake[sh])+d); v106Save(); toast(SHIFT_NAMES[sh]+" wieder Standard"); }; r.append(x); } c.append(r); });
+  const one=el("div","shOne"); const di=el("input"); di.type="date"; di.value=activeDay(); const ob=el("button","btn ghost small","Einzelnen Tag ändern"); ob.onclick=()=>{ if(di.value) openDayShift(di.value); }; one.append(di, ob); c.append(el("div","cat","Nur ein Tag anders"), one);
+  const L=Object.entries(state.shiftT||{}).filter(([k])=>k>=addDays(calToday(),-1) && DEF_T[state.shift[k]]).sort(); if(L.length){ const ul=el("div","shList"); L.forEach(([k,t])=>{ const b=el("button","pill",fmtDate(k)+": "+mShort(t[0])+" bis "+mShort(t[1])); b.onclick=()=>openDayShift(k); ul.append(b); }); c.append(ul); }
+  putInfo && putInfo(h,"shifts");
+}
+function v106Post(){
+  renderShiftTimesCard();
+  const shc=$("shCard"), k=activeDay(), sh=state.shift[k];
+  if(shc){ const inner=shc.querySelector(".shInner"); if(inner && !inner.querySelector(".shDayT")){ const b=el("button","link shDayT","🕗 Heute andere Zeit"); b.onclick=()=>openDayShift(activeDay()); const cal=inner.querySelector(".shCal"); cal ? cal.before(b) : inner.append(b); }
+    const b2=shc.querySelector(".shDayT"); if(b2) b2.hidden=!DEF_T[sh];
+    const st=$("shSt"); if(st && DEF_T[sh]){ const t=dayT(k,sh), inp=$("wakeRow") && $("wakeRow").querySelector("input"); st.textContent=[mShort(t[0])+" bis "+mShort(t[1])+" Uhr"+((state.shiftT||{})[k]?" (heute anders)":""), inp&&inp.value?"auf seit "+inp.value:""].filter(Boolean).join(" · "); } }
+}
+{ const _p92=v92Post; v92Post=function(){ _p92(); try{ v106Post(); }catch(e){ console.error(e); } }; }
 
 // ---------- Start
 (async function(){
